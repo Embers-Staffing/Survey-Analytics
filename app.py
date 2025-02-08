@@ -991,71 +991,32 @@ if check_password():
                     
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # Scatter Plots with Trend Lines
-                    st.subheader("Relationship Analysis")
+                    # Add pairplot for feature relationships
+                    st.subheader("Feature Relationships")
                     
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        # Years vs Salary Level
-                        fig = px.scatter(
-                            regression_df,
-                            x='Years',
-                            y='Target Salary Level',
-                            trendline="ols",
-                            title='Years of Experience vs Target Salary Level',
-                            labels={
-                                'Target Salary Level': 'Salary Level (1=Entry, 4=Executive)'
-                            }
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                        
-                        # Show correlation coefficient
-                        correlation = regression_df['Years'].corr(regression_df['Target Salary Level'])
-                        st.write(f"Correlation coefficient: {correlation:.2f}")
-                    
-                    with col2:
-                        # Project Size vs Salary Level
-                        fig = px.scatter(
-                            regression_df,
-                            x='Project Size',
-                            y='Target Salary Level',
-                            trendline="ols",
-                            title='Project Size vs Target Salary Level',
-                            labels={
-                                'Project Size': 'Project Size (1=Small, 3=Large)',
-                                'Target Salary Level': 'Salary Level (1=Entry, 4=Executive)'
-                            }
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                        
-                        # Show correlation coefficient
-                        correlation = regression_df['Project Size'].corr(regression_df['Target Salary Level'])
-                        st.write(f"Correlation coefficient: {correlation:.2f}")
-                    
-                    # Additional Analysis
-                    st.subheader("Career Progression Analysis")
-                    
-                    # Box plot of years by target salary level
-                    fig = px.box(
+                    # Create pairplot using seaborn
+                    fig, ax = plt.subplots(figsize=(10, 10))
+                    sns.pairplot(
                         regression_df,
-                        x='Target Salary Level',
-                        y='Years',
-                        title='Years of Experience Distribution by Target Salary Level',
-                        labels={
-                            'Target Salary Level': 'Salary Level (1=Entry, 4=Executive)',
-                            'Years': 'Years of Experience'
-                        }
+                        diag_kind='kde',  # Kernel density on diagonal
+                        plot_kws={'alpha': 0.6},  # Add transparency to points
+                        diag_kws={'fill': True},  # Fill density plots
+                        corner=True  # Show only lower triangle
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.pyplot(plt.gcf())
                     
-                    # Summary statistics
-                    st.write("Summary Statistics by Target Salary Level:")
-                    summary = regression_df.groupby('Target Salary Level').agg({
-                        'Years': ['mean', 'std', 'count'],
-                        'Project Size': 'mean'
-                    }).round(2)
-                    st.dataframe(summary)
+                    # Add explanation
+                    st.info("""
+                    This pairplot shows the relationships between different features:
+                    - Scatter plots show relationships between pairs of features
+                    - Diagonal plots show the distribution of each feature
+                    - Look for patterns in the scatter plots to identify correlations
+                    """)
+                    
+                    # Add summary statistics
+                    st.subheader("Feature Statistics")
+                    stats_df = regression_df.describe().round(2)
+                    st.dataframe(stats_df)
                     
                 except Exception as e:
                     st.error(f"Regression analysis error: {str(e)}")
