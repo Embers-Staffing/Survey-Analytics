@@ -418,8 +418,8 @@ if check_password():
                     # Add visualization selector
                     viz_type = st.selectbox(
                         "Select Visualization Type",
-                        ["Distribution", "Relationships", "Time Trends", "Skill Combinations"],
-                        key="skills_viz_selector"
+                        ["Distribution"],  # Simplified to just Distribution for now
+                        key="skills_viz_selector_overview"  # Added unique key
                     )
                     
                     if viz_type == "Distribution":
@@ -433,7 +433,7 @@ if check_password():
                             title='Technical Skills Distribution',
                             color_discrete_sequence=['#2ecc71']
                         )
-                        st.plotly_chart(fig1, use_container_width=True, key="skills_hist")
+                        st.plotly_chart(fig1, use_container_width=True, key="skills_hist_overview")  # Updated key
                         
                         # Add Skills Summary
                         st.subheader("Skills Breakdown")
@@ -447,7 +447,7 @@ if check_password():
                                 names=skill_counts.index,
                                 title='Skills Distribution (Pie Chart)'
                             )
-                            st.plotly_chart(fig2, use_container_width=True, key="skills_pie")
+                            st.plotly_chart(fig2, use_container_width=True, key="skills_pie_overview")  # Updated key
                         
                         with col2:
                             # Bar Chart
@@ -457,7 +457,7 @@ if check_password():
                                 title='Skills Distribution (Bar Chart)',
                                 labels={'x': 'Skill', 'y': 'Count'}
                             )
-                            st.plotly_chart(fig3, use_container_width=True, key="skills_bar")
+                            st.plotly_chart(fig3, use_container_width=True, key="skills_bar_overview")  # Updated key
                         
                         # Skills Summary Table
                         st.subheader("Skills Summary")
