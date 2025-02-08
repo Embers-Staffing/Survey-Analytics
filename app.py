@@ -935,7 +935,7 @@ if check_password():
                         st.info("No technical skills found in the data")
                 except Exception as e:
                     st.error(f"Skills analysis error: {str(e)}")
-                    st.write("Unable to analyze technical skills")
+                    st.write("No technical skills data available")
 
     with tabs[2]:  # Data Tab
         st.markdown("### 📋 Raw Data Explorer")
