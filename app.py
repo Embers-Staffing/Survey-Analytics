@@ -44,12 +44,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Add custom CSS
+# Add custom CSS with improved styling
 st.markdown("""
 <style>
     /* Main container */
     .main {
         padding: 2rem;
+        max-width: 100%;
     }
     
     /* Headers */
@@ -57,79 +58,90 @@ st.markdown("""
         color: #1E3D59;
         padding-bottom: 1rem;
         border-bottom: 2px solid #F5F5F5;
+        margin-bottom: 2rem;
     }
-    h2 {
-        color: #2E5077;
-        margin-top: 2rem;
-    }
-    h3 {
-        color: #2E5077;
-        font-size: 1.3rem;
+    
+    /* Containers */
+    div[data-testid="stVerticalBlock"] > div {
+        padding: 0.5rem 0;
     }
     
     /* Metrics */
     div[data-testid="metric-container"] {
         background-color: #F8F9FA;
         border: 1px solid #E9ECEF;
-        padding: 1rem;
+        padding: 1.5rem;
         border-radius: 8px;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin: 0.5rem 0;
     }
     
     /* Expanders */
     div[data-testid="stExpander"] {
         border: none;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        margin-bottom: 1rem;
+        margin: 1rem 0;
+        border-radius: 8px;
     }
     
     /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 2rem;
         background-color: #F8F9FA;
-        padding: 0.5rem;
+        padding: 1rem;
         border-radius: 8px;
+        margin-bottom: 1rem;
     }
+    
     .stTabs [data-baseweb="tab"] {
         height: 3rem;
         background-color: transparent;
         border: none;
         color: #495057;
         font-weight: 500;
-    }
-    .stTabs [data-baseweb="tab-highlight"] {
-        background-color: #2E5077;
+        padding: 0 2rem;
     }
     
-    /* Sidebar */
-    .css-1d391kg {
-        padding: 2rem 1rem;
-    }
-    
-    /* Buttons */
-    .stButton>button {
-        background-color: #2E5077;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-    }
-    .stButton>button:hover {
-        background-color: #1E3D59;
-    }
-    
-    /* Charts container */
+    /* Charts */
     div[data-testid="stHorizontalBlock"] {
         gap: 2rem;
-        margin: 1rem 0;
+        padding: 1rem 0;
     }
     
-    /* Info boxes */
-    div[data-testid="stAlert"] {
-        border: none;
+    /* Tables */
+    div[data-testid="stTable"] {
+        background-color: #FFFFFF;
+        padding: 1rem;
         border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    /* Inputs */
+    div[data-baseweb="select"] {
+        background-color: #FFFFFF;
+        border-radius: 4px;
+    }
+    
+    /* Footer */
+    .footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        background-color: #F8F9FA;
+        padding: 0.5rem;
+        text-align: center;
+        border-top: 1px solid #E9ECEF;
+        font-size: 0.9rem;
+        color: #6C757D;
     }
 </style>
+""", unsafe_allow_html=True)
+
+# Update the footer to use the new class
+st.markdown("""
+<div class="footer">
+    Updated: {datetime.now().strftime('%Y-%m-%d')}
+</div>
 """, unsafe_allow_html=True)
 
 # Update the main title and description
@@ -173,15 +185,6 @@ with st.spinner("Loading data..."):
 
 # Add tooltips and help text
 st.sidebar.info("Use these filters to customize the dashboard view")
-
-# Add footer
-st.markdown("""
-<div style='position: fixed; bottom: 0; width: 100%; background-color: #F8F9FA; padding: 0.5rem; text-align: center;'>
-    <p style='color: #6C757D; margin: 0;'>
-        Updated: {datetime.now().strftime('%Y-%m-%d')}
-    </p>
-</div>
-""", unsafe_allow_html=True)
 
 def create_correlation_heatmap(df, columns):
     # Create correlation matrix
