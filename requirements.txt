@@ -7,4 +7,7 @@ seaborn
 scikit-learn
 numpy
 matplotlib
-statsmodels 
+statsmodels
+plotly-express
+networkx
+wordcloud 
