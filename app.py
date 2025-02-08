@@ -393,24 +393,37 @@ if check_password():
             # Create Sankey diagram of role progression
             role_progression = []
             for _, row in filtered_df.iterrows():
-                years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
-                current_role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
-                target_role = row.get('workPreferences', {}).get('roles', ['Unknown'])[0]
-                
-                role_progression.append({
-                    'Years': years,
-                    'Current Role': current_role,
-                    'Target Role': target_role
-                })
+                try:
+                    years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                    current_role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                    target_roles = row.get('workPreferences', {}).get('roles', ['Unknown'])
+                    target_role = target_roles[0] if target_roles else 'Unknown'
+                    
+                    # Clean up role names
+                    current_role = current_role.replace('-', ' ').title()
+                    target_role = target_role.replace('-', ' ').title()
+                    
+                    role_progression.append({
+                        'Years': years,
+                        'Current Role': current_role,
+                        'Target Role': target_role
+                    })
+                except:
+                    continue
             
             if role_progression:
                 prog_df = pd.DataFrame(role_progression)
                 
-                # Create Sankey diagram
+                # Create Sankey diagram with improved styling
                 source = []
                 target = []
                 value = []
                 
+                # Get unique roles and create node labels
+                all_roles = sorted(set(prog_df['Current Role'].unique()) | set(prog_df['Target Role'].unique()))
+                node_colors = px.colors.qualitative.Set3[:len(all_roles)]
+                
+                # Create links
                 for current in prog_df['Current Role'].unique():
                     for target_role in prog_df['Target Role'].unique():
                         count = len(prog_df[
@@ -418,26 +431,60 @@ if check_password():
                             (prog_df['Target Role'] == target_role)
                         ])
                         if count > 0:
-                            source.append(current)
-                            target.append(target_role)
+                            source.append(all_roles.index(current))
+                            target.append(all_roles.index(target_role))
                             value.append(count)
                 
+                # Create Sankey diagram with improved styling
                 fig = go.Figure(data=[go.Sankey(
                     node = dict(
-                        pad = 15,
-                        thickness = 20,
+                        pad = 20,
+                        thickness = 30,
                         line = dict(color = "black", width = 0.5),
-                        label = list(set(source + target))
+                        label = all_roles,
+                        color = node_colors
                     ),
                     link = dict(
-                        source = [list(set(source + target)).index(s) for s in source],
-                        target = [list(set(source + target)).index(t) for t in target],
-                        value = value
+                        source = source,
+                        target = target,
+                        value = value,
+                        color = [f'rgba(44, 160, 44, {v/max(value)})' for v in value]
                     )
                 )])
                 
-                fig.update_layout(title_text="Career Progression Paths")
+                # Update layout
+                fig.update_layout(
+                    title_text="Career Progression Paths",
+                    font_size=12,
+                    height=600,
+                    margin=dict(t=40, l=0, r=0, b=0)
+                )
+                
+                # Show diagram
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # Add summary statistics
+                st.subheader("Career Transition Summary")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write("Most Common Current Roles:")
+                    current_role_counts = prog_df['Current Role'].value_counts().head(3)
+                    for role, count in current_role_counts.items():
+                        st.write(f"- {role}: {count} respondents")
+                
+                with col2:
+                    st.write("Most Desired Target Roles:")
+                    target_role_counts = prog_df['Target Role'].value_counts().head(3)
+                    for role, count in target_role_counts.items():
+                        st.write(f"- {role}: {count} respondents")
+                
+                # Add explanation
+                st.info("""
+                This Sankey diagram shows career progression paths from current roles (left) 
+                to target roles (right). The width of each flow indicates the number of 
+                respondents following that path. Hover over the diagram for detailed information.
+                """)
 
         # Skills Analysis
         with st.expander("Skills Analysis", expanded=True):
