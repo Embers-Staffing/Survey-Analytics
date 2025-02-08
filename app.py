@@ -151,26 +151,50 @@ if check_password():
         # Overview Section
         st.header("Response Overview")
         col1, col2, col3 = st.columns(3)
+        
         with col1:
             st.metric("Total Responses", len(df))
+        
         with col2:
             try:
-                # Access nested personalInfo structure
-                years = [float(row.get('personalInfo', {}).get('yearsInConstruction', 0)) 
-                        for row in df.to_dict('records')]
-                years_mean = round(sum(years) / len(years), 1)
-                st.metric("Average Years in Construction", years_mean)
-            except:
+                years_list = []
+                for row in df.to_dict('records'):
+                    year_str = str(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                    # Remove any non-numeric characters
+                    year_str = ''.join(c for c in year_str if c.isdigit())
+                    if year_str:
+                        years_list.append(float(year_str))
+                
+                if years_list:
+                    years_mean = round(sum(years_list) / len(years_list), 1)
+                    st.metric("Average Years in Construction", years_mean)
+                else:
+                    st.metric("Average Years in Construction", "N/A")
+            except Exception as e:
                 st.metric("Average Years in Construction", "N/A")
+                st.write(f"Error calculating years: {str(e)}")
+        
         with col3:
             try:
-                # Access nested skills structure
-                roles = [row.get('skills', {}).get('experience', {}).get('role', 'Unknown') 
-                        for row in df.to_dict('records')]
-                most_common = max(set(roles), key=roles.count)
-                st.metric("Most Common Role", most_common)
-            except:
+                roles = []
+                for row in df.to_dict('records'):
+                    experience = row.get('skills', {}).get('experience', {})
+                    if isinstance(experience, dict):
+                        role = experience.get('role')
+                        if role:
+                            roles.append(role)
+                
+                if roles:
+                    role_counts = {}
+                    for role in roles:
+                        role_counts[role] = role_counts.get(role, 0) + 1
+                    most_common = max(role_counts.items(), key=lambda x: x[1])[0]
+                    st.metric("Most Common Role", most_common)
+                else:
+                    st.metric("Most Common Role", "N/A")
+            except Exception as e:
                 st.metric("Most Common Role", "N/A")
+                st.write(f"Error calculating roles: {str(e)}")
 
         # Basic visualizations (using seaborn)
         try:
