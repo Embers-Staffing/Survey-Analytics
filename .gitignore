@@ -1,5 +1,12 @@
-firebase_config.json
-.env
+# Secrets and credentials
+.streamlit/secrets.toml
+firebase-credentials.json
+*.json
+!package.json
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.env
 .DS_Store 

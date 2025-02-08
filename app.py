@@ -28,8 +28,7 @@ plt.style.use('default')
 
 # Initialize Firebase
 if not firebase_admin._apps:
-    # Get Firebase credentials from secrets
-    firebase_config = {
+    cred = credentials.Certificate({
         "type": st.secrets["firebase"]["type"],
         "project_id": st.secrets["firebase"]["project_id"],
         "private_key_id": st.secrets["firebase"]["private_key_id"],
@@ -40,8 +39,7 @@ if not firebase_admin._apps:
         "token_uri": st.secrets["firebase"]["token_uri"],
         "auth_provider_x509_cert_url": st.secrets["firebase"]["auth_provider_x509_cert_url"],
         "client_x509_cert_url": st.secrets["firebase"]["client_x509_cert_url"]
-    }
-    cred = credentials.Certificate(firebase_config)
+    })
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
