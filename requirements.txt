@@ -2,4 +2,7 @@ streamlit
 firebase-admin
 pandas
 plotly
-python-dotenv 
+python-dotenv
+seaborn
+scikit-learn
+numpy 
