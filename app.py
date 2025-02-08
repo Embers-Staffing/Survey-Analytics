@@ -207,48 +207,92 @@ if check_password():
         # Personality Clustering
         st.subheader("Personality Clusters")
         try:
-            clusters = analyze_personality_clusters(df)
+            # First, let's see what data we have
+            st.write("Raw data sample:", df.iloc[0].to_dict())
+            
+            # Create simpler features for clustering
+            years = pd.to_numeric(df['personalInfo'].apply(lambda x: x.get('yearsInConstruction', 0)), errors='coerce')
+            roles = df['skills'].apply(lambda x: x.get('experience', {}).get('role', 'Unknown'))
+            
+            # Create feature matrix
+            features = pd.DataFrame({
+                'years': years,
+                'role': pd.Categorical(roles).codes
+            })
+            
+            # Perform clustering
+            kmeans = KMeans(n_clusters=3, random_state=42)
+            clusters = kmeans.fit_predict(features)
             df['Cluster'] = clusters
             
-            fig = px.scatter(df, 
-                            x='personal_yearsInConstruction', 
-                            y='targetSalary',
-                            color='Cluster',
-                            title='Experience vs Salary Expectations by Personality Cluster')
+            # Create visualization
+            fig = px.scatter(
+                x=years,
+                y=roles,
+                color=clusters,
+                title='Experience Clusters',
+                labels={'x': 'Years in Construction', 'y': 'Role'}
+            )
             st.plotly_chart(fig, use_container_width=True)
-        except:
+        except Exception as e:
+            st.error(f"Clustering error: {str(e)}")
             st.write("Unable to generate personality cluster visualization")
         
         # Skills Analysis
         st.subheader("Skills Distribution")
         try:
-            tech_skills = []
-            for idx, row in df.iterrows():
-                if isinstance(row.get('skills', {}).get('technical'), list):
-                    tech_skills.extend(row['skills']['technical'])
-            tech_skills_df = pd.DataFrame(tech_skills, columns=['skill'])
-            fig = px.histogram(tech_skills_df, x='skill', 
-                             title='Technical Skills Distribution',
-                             color_discrete_sequence=['#2ecc71'])
-            st.plotly_chart(fig, use_container_width=True)
-        except:
+            # Extract technical skills
+            all_skills = []
+            for _, row in df.iterrows():
+                skills = row.get('skills', {})
+                if isinstance(skills, dict):
+                    tech = skills.get('technical', [])
+                    if isinstance(tech, list):
+                        all_skills.extend(tech)
+            
+            if all_skills:
+                skills_df = pd.DataFrame(all_skills, columns=['Skill'])
+                fig = px.histogram(
+                    skills_df,
+                    x='Skill',
+                    title='Technical Skills Distribution',
+                    color_discrete_sequence=['#2ecc71']
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.write("No technical skills found in the data")
+        except Exception as e:
+            st.error(f"Skills analysis error: {str(e)}")
             st.write("No technical skills data available")
         
-        # Personality Insights with Advanced Visualization
+        # Personality Insights
         st.subheader("Personality Type Distribution")
         try:
-            mbti_data = []
-            for idx, row in df.iterrows():
-                attention = row.get('personalityTraits', {}).get('myersBriggs', {}).get('attention', [])
-                if isinstance(attention, list) and attention:
-                    mbti_data.append(attention[0])
-            mbti_df = pd.DataFrame(mbti_data, columns=['MBTI'])
+            # Extract MBTI data
+            mbti_types = []
+            for _, row in df.iterrows():
+                traits = row.get('personalityTraits', {})
+                if isinstance(traits, dict):
+                    mbti = traits.get('myersBriggs', {})
+                    if isinstance(mbti, dict):
+                        attention = mbti.get('attention', [])
+                        if isinstance(attention, list) and attention:
+                            mbti_types.append(attention[0])
             
-            fig, ax = plt.subplots(figsize=(12, 6))
-            sns.countplot(data=mbti_df, x='MBTI', palette='viridis', ax=ax)
-            plt.xticks(rotation=45)
-            st.pyplot(fig)
-        except:
+            if mbti_types:
+                mbti_df = pd.DataFrame(mbti_types, columns=['Type'])
+                fig = px.bar(
+                    mbti_df['Type'].value_counts().reset_index(),
+                    x='index',
+                    y='Type',
+                    title='MBTI Type Distribution',
+                    labels={'index': 'MBTI Type', 'Type': 'Count'}
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.write("No MBTI data found in the responses")
+        except Exception as e:
+            st.error(f"MBTI analysis error: {str(e)}")
             st.write("No MBTI data available")
 
     with tab3:
