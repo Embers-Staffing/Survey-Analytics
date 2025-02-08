@@ -11,6 +11,8 @@ import numpy as np
 from auth import check_password
 import plotly.graph_objects as go
 from datetime import datetime
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, classification_report
 
 # Set style for seaborn
 sns.set_theme(style="whitegrid")
@@ -991,160 +993,89 @@ if check_password():
                     
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # Add pairplot for feature relationships
-                    st.subheader("Feature Relationships")
+                    # Decision Boundary Plot
+                    st.subheader("Decision Boundary Analysis")
                     
-                    # Create pairplot using seaborn
-                    fig, ax = plt.subplots(figsize=(10, 10))
-                    sns.pairplot(
-                        regression_df,
-                        diag_kind='kde',  # Kernel density on diagonal
-                        plot_kws={'alpha': 0.6},  # Add transparency to points
-                        diag_kws={'fill': True},  # Fill density plots
-                        corner=True  # Show only lower triangle
-                    )
-                    st.pyplot(plt.gcf())
+                    # Prepare data for decision boundary plot
+                    X = regression_df[['Years', 'Project Size']].values
+                    y = regression_df['Target Salary Level'].values
                     
-                    # Add explanation
-                    st.info("""
-                    This pairplot shows the relationships between different features:
-                    - Scatter plots show relationships between pairs of features
-                    - Diagonal plots show the distribution of each feature
-                    - Look for patterns in the scatter plots to identify correlations
-                    """)
-                    
-                    # Add summary statistics
-                    st.subheader("Feature Statistics")
-                    stats_df = regression_df.describe().round(2)
-                    st.dataframe(stats_df)
-                    
-                    # Feature Importance Analysis
-                    st.subheader("Feature Importance Analysis")
-                    
-                    # Calculate feature importance using correlation with target salary
-                    importance_scores = {}
-                    target = regression_df['Target Salary Level']
-                    
-                    for feature in ['Years', 'Project Size']:
-                        correlation = abs(regression_df[feature].corr(target))
-                        importance_scores[feature] = correlation
-                    
-                    # Create feature importance bar chart
-                    importance_df = pd.DataFrame({
-                        'Feature': list(importance_scores.keys()),
-                        'Importance': list(importance_scores.values())
-                    }).sort_values('Importance', ascending=True)
-                    
-                    fig = px.bar(
-                        importance_df,
-                        x='Importance',
-                        y='Feature',
-                        orientation='h',
-                        title='Feature Importance (Correlation with Target Salary)',
-                        color='Importance',
-                        color_continuous_scale='Viridis'
+                    # Create mesh grid
+                    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+                    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+                    xx, yy = np.meshgrid(
+                        np.arange(x_min, x_max, 0.1),
+                        np.arange(y_min, y_max, 0.1)
                     )
                     
-                    fig.update_layout(
-                        xaxis_title='Absolute Correlation',
-                        yaxis_title='Feature',
-                        showlegend=False,
-                        height=400
+                    # Fit a simple classifier
+                    clf = KNeighborsClassifier(n_neighbors=5)
+                    clf.fit(X, y)
+                    
+                    # Make predictions on mesh grid
+                    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+                    Z = Z.reshape(xx.shape)
+                    
+                    # Create contour plot
+                    fig = go.Figure()
+                    
+                    # Add contour
+                    fig.add_trace(
+                        go.Contour(
+                            x=np.arange(x_min, x_max, 0.1),
+                            y=np.arange(y_min, y_max, 0.1),
+                            z=Z,
+                            colorscale='Viridis',
+                            showscale=True,
+                            name='Decision Boundary'
+                        )
                     )
                     
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Add interpretation
-                    st.info("""
-                    This chart shows how strongly each feature correlates with target salary level:
-                    - Higher values indicate stronger relationships
-                    - Features are ranked by their absolute correlation with target salary
-                    - This helps identify which factors most influence salary expectations
-                    """)
-                    
-                    # Add detailed statistics
-                    st.subheader("Feature Impact Details")
-                    for feature, importance in importance_scores.items():
-                        st.write(f"**{feature}**")
-                        st.write(f"- Correlation with Target Salary: {importance:.3f}")
-                        avg_by_level = regression_df.groupby('Target Salary Level')[feature].mean()
-                        st.write("- Average by Salary Level:")
-                        for level, avg in avg_by_level.items():
-                            st.write(f"  • Level {level}: {avg:.1f}")
-                        st.write("")
-                    
-                    # Enhanced Correlation Analysis with Heatmap
-                    st.subheader("Feature Correlation Analysis")
-                    
-                    # Prepare correlation data
-                    corr_matrix = regression_df.corr()
-                    
-                    # Create enhanced heatmap
-                    fig = px.imshow(
-                        corr_matrix,
-                        x=corr_matrix.columns,
-                        y=corr_matrix.columns,
-                        color_continuous_scale='RdBu_r',  # Red-Blue diverging colorscale
-                        aspect='auto',
-                        title='Feature Correlation Heatmap'
-                    )
-                    
-                    # Add correlation values as text
-                    fig.update_traces(
-                        text=corr_matrix.round(2),
-                        texttemplate='%{text}',
-                        textfont={'size': 12},
-                        hoverongaps=False,
-                        hovertemplate='%{x} vs %{y}<br>Correlation: %{z:.2f}<extra></extra>'
-                    )
+                    # Add scatter points
+                    for salary_level in np.unique(y):
+                        mask = y == salary_level
+                        fig.add_trace(
+                            go.Scatter(
+                                x=X[mask, 0],
+                                y=X[mask, 1],
+                                mode='markers',
+                                name=f'Salary Level {salary_level}',
+                                marker=dict(size=8)
+                            )
+                        )
                     
                     # Update layout
                     fig.update_layout(
-                        width=700,
+                        title='Decision Boundaries between Salary Levels',
+                        xaxis_title='Years of Experience',
+                        yaxis_title='Project Size',
                         height=600,
-                        xaxis_title='',
-                        yaxis_title='',
-                        xaxis={'side': 'bottom'},
-                        coloraxis_colorbar_title='Correlation'
+                        showlegend=True
                     )
                     
                     st.plotly_chart(fig, use_container_width=True)
                     
                     # Add interpretation
                     st.info("""
-                    Correlation Interpretation:
-                    - Values range from -1 (perfect negative correlation) to 1 (perfect positive correlation)
-                    - 0 indicates no correlation
-                    - Darker red indicates stronger positive correlation
-                    - Darker blue indicates stronger negative correlation
+                    This decision boundary plot shows how Years of Experience and Project Size 
+                    influence Target Salary Levels:
+                    - Different colors represent different predicted salary levels
+                    - Points show actual data samples
+                    - Boundaries show where the model predicts transitions between salary levels
+                    - Clearer boundaries indicate stronger relationships between features and salary
                     """)
                     
-                    # Add detailed correlation analysis
-                    st.subheader("Key Correlations")
-                    correlations = []
-                    for i in range(len(corr_matrix.columns)):
-                        for j in range(i+1, len(corr_matrix.columns)):
-                            col1, col2 = corr_matrix.columns[i], corr_matrix.columns[j]
-                            corr = corr_matrix.iloc[i, j]
-                            correlations.append({
-                                'Features': f"{col1} vs {col2}",
-                                'Correlation': corr,
-                                'Strength': abs(corr)
-                            })
+                    # Add accuracy metrics
+                    y_pred = clf.predict(X)
+                    accuracy = accuracy_score(y, y_pred)
                     
-                    # Sort by absolute correlation strength
-                    correlations_df = pd.DataFrame(correlations).sort_values('Strength', ascending=False)
+                    st.subheader("Classification Metrics")
+                    st.write(f"Model Accuracy: {accuracy:.2%}")
                     
-                    # Display top correlations
-                    for _, row in correlations_df.iterrows():
-                        st.write(f"**{row['Features']}**: {row['Correlation']:.3f}")
-                        # Add interpretation
-                        if abs(row['Correlation']) > 0.7:
-                            st.write("→ Strong correlation")
-                        elif abs(row['Correlation']) > 0.4:
-                            st.write("→ Moderate correlation")
-                        else:
-                            st.write("→ Weak correlation")
+                    # Show detailed classification report
+                    report = classification_report(y, y_pred, output_dict=True)
+                    report_df = pd.DataFrame(report).transpose()
+                    st.dataframe(report_df.round(2))
                     
                 except Exception as e:
                     st.error(f"Regression analysis error: {str(e)}")
