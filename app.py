@@ -450,41 +450,23 @@ if check_password():
             if role_progression:
                 prog_df = pd.DataFrame(role_progression)
                 
-                # Create Sankey diagram with improved styling
-                source = []
-                target = []
-                value = []
-                
-                # Get unique roles and create node labels
-                all_roles = sorted(set(prog_df['Current Role'].unique()) | set(prog_df['Target Role'].unique()))
-                
-                # Create links
-                for current in prog_df['Current Role'].unique():
-                    for target_role in prog_df['Target Role'].unique():
-                        count = len(prog_df[
-                            (prog_df['Current Role'] == current) & 
-                            (prog_df['Target Role'] == target_role)
-                        ])
-                        if count > 0:
-                            source.append(all_roles.index(current))
-                            target.append(all_roles.index(target_role))
-                            value.append(count)
-                
-                # Create Sankey diagram with improved styling
+                # Create Sankey diagram with basic styling
                 fig = go.Figure(data=[go.Sankey(
                     node = dict(
                         pad = 20,
                         thickness = 30,
                         line = dict(color = "black", width = 0.5),
-                        label = all_roles,
-                        color = px.colors.qualitative.Set3[:len(all_roles)],
+                        label = prog_df['Current Role'].unique(),
+                        # Use basic colors
+                        color = "lightblue",  # Single color for all nodes
                         font = dict(size = 12, color = "black")
                     ),
                     link = dict(
-                        source = source,
-                        target = target,
-                        value = value,
-                        color = [f'rgba(44, 160, 44, {v/max(value)})' for v in value]
+                        source = prog_df['Current Role'].apply(lambda x: prog_df[prog_df['Current Role'] == x].index.values),
+                        target = prog_df['Target Role'].apply(lambda x: prog_df[prog_df['Target Role'] == x].index.values),
+                        value = prog_df['Years'],
+                        # Use basic color for links
+                        color = "rgba(0, 150, 0, 0.4)"  # Light green with opacity
                     )
                 )])
                 
