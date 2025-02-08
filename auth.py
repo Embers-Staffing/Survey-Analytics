@@ -3,7 +3,10 @@ import hmac
 
 def check_password():
     """Returns `True` if the user had the correct password."""
-
+    if "password" not in st.secrets:
+        st.error("Dashboard password not configured. Please contact administrator.")
+        return False
+        
     def password_entered():
         """Checks whether a password entered by the user is correct."""
         if hmac.compare_digest(st.session_state["password"], st.secrets["password"]):
