@@ -162,8 +162,8 @@ def section_header(icon, title, description):
 # Update tabs with better organization
 tabs = st.tabs([
     "📊 Overview",
-    "🔍 Detailed Analysis",
-    "📋 Raw Data"
+    "📈 Analytics",
+    "📋 Data"
 ])
 
 # Add loading spinners and progress bars
@@ -176,9 +176,9 @@ st.sidebar.info("ℹ️ Use these filters to customize the dashboard view")
 
 # Add footer
 st.markdown("""
-<div style='position: fixed; bottom: 0; width: 100%; background-color: #F8F9FA; padding: 1rem; text-align: center;'>
+<div style='position: fixed; bottom: 0; width: 100%; background-color: #F8F9FA; padding: 0.5rem; text-align: center;'>
     <p style='color: #6C757D; margin: 0;'>
-        Construction Career Survey Dashboard | Updated: {datetime.now().strftime('%Y-%m-%d')}
+        Updated: {datetime.now().strftime('%Y-%m-%d')}
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -331,8 +331,6 @@ def apply_filters(df, filters):
 
 # Main dashboard code
 if check_password():
-    st.title("👷 Construction Career Survey Dashboard")
-    
     # Load data
     with st.spinner("Loading survey data..."):
         df = get_survey_data()
