@@ -423,7 +423,50 @@ if check_password():
                     )
                     
                     if viz_type == "Distribution":
-                        # Existing distribution charts...
+                        # Distribution charts
+                        st.subheader("Skills Distribution")
+                        
+                        # Histogram
+                        fig1 = px.histogram(
+                            skills_df,
+                            x='Skill',
+                            title='Technical Skills Distribution',
+                            color_discrete_sequence=['#2ecc71']
+                        )
+                        st.plotly_chart(fig1, use_container_width=True, key="skills_hist")
+                        
+                        # Add Skills Summary
+                        st.subheader("Skills Breakdown")
+                        skill_counts = skills_df['Skill'].value_counts()
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            # Pie Chart
+                            fig2 = px.pie(
+                                values=skill_counts.values,
+                                names=skill_counts.index,
+                                title='Skills Distribution (Pie Chart)'
+                            )
+                            st.plotly_chart(fig2, use_container_width=True, key="skills_pie")
+                        
+                        with col2:
+                            # Bar Chart
+                            fig3 = px.bar(
+                                x=skill_counts.index,
+                                y=skill_counts.values,
+                                title='Skills Distribution (Bar Chart)',
+                                labels={'x': 'Skill', 'y': 'Count'}
+                            )
+                            st.plotly_chart(fig3, use_container_width=True, key="skills_bar")
+                        
+                        # Skills Summary Table
+                        st.subheader("Skills Summary")
+                        summary_df = pd.DataFrame({
+                            'Skill': skill_counts.index,
+                            'Count': skill_counts.values,
+                            'Percentage': (skill_counts.values / len(skills_df) * 100).round(1)
+                        })
+                        st.dataframe(summary_df, use_container_width=True)
                         
                     elif viz_type == "Relationships":
                         # Create skill co-occurrence matrix
