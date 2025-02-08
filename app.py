@@ -467,97 +467,11 @@ if check_password():
                             'Percentage': (skill_counts.values / len(skills_df) * 100).round(1)
                         })
                         st.dataframe(summary_df, use_container_width=True)
-                        
-                    elif viz_type == "Relationships":
-                        # Create skill co-occurrence matrix
-                        st.subheader("Skill Relationships")
-                        
-                        # Group skills by response
-                        skill_groups = []
-                        for _, row in filtered_df.iterrows():
-                            skills = row.get('skills', {}).get('technical', [])
-                            if isinstance(skills, list):
-                                skill_groups.append(skills)
-                        
-                        # Create co-occurrence matrix
-                        all_unique_skills = list(set([s for group in skill_groups for s in group]))
-                        co_occurrence = np.zeros((len(all_unique_skills), len(all_unique_skills)))
-                        
-                        for group in skill_groups:
-                            for i, skill1 in enumerate(all_unique_skills):
-                                for j, skill2 in enumerate(all_unique_skills):
-                                    if skill1 in group and skill2 in group:
-                                        co_occurrence[i, j] += 1
-                        
-                        # Create heatmap
-                        fig = px.imshow(
-                            co_occurrence,
-                            x=all_unique_skills,
-                            y=all_unique_skills,
-                            title="Skill Co-occurrence Matrix",
-                            color_continuous_scale="Viridis"
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                        
-                    elif viz_type == "Time Trends":
-                        # Show skill adoption over time
-                        st.subheader("Skill Trends Over Time")
-                        
-                        # Create time series data
-                        time_data = []
-                        for _, row in filtered_df.iterrows():
-                            date = pd.to_datetime(row.get('submittedAt'))
-                            skills = row.get('skills', {}).get('technical', [])
-                            if isinstance(skills, list):
-                                for skill in skills:
-                                    time_data.append({
-                                        'Date': date,
-                                        'Skill': skill
-                                    })
-                        
-                        if time_data:
-                            time_df = pd.DataFrame(time_data)
-                            time_df = time_df.sort_values('Date')
-                            
-                            # Create cumulative adoption chart
-                            fig = px.line(
-                                time_df.groupby(['Date', 'Skill']).size().unstack().cumsum(),
-                                title="Skill Adoption Over Time"
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                        
-                    else:  # Skill Combinations
-                        st.subheader("Common Skill Combinations")
-                        
-                        # Analyze common skill pairs
-                        skill_pairs = []
-                        for _, row in filtered_df.iterrows():
-                            skills = row.get('skills', {}).get('technical', [])
-                            if isinstance(skills, list) and len(skills) > 1:
-                                for i in range(len(skills)):
-                                    for j in range(i+1, len(skills)):
-                                        skill_pairs.append(tuple(sorted([skills[i], skills[j]])))
-                        
-                        if skill_pairs:
-                            pair_counts = pd.Series(skill_pairs).value_counts()
-                            
-                            # Create network graph
-                            fig = px.scatter(
-                                x=[p[0] for p in pair_counts.index[:10]],
-                                y=[p[1] for p in pair_counts.index[:10]],
-                                size=pair_counts[:10],
-                                text=[f"{p[0]}-{p[1]}" for p in pair_counts.index[:10]],
-                                title="Top 10 Skill Combinations"
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                            
-                            # Show combination statistics
-                            st.write("Most Common Skill Combinations:")
-                            for pair, count in pair_counts[:5].items():
-                                st.write(f"- {pair[0]} + {pair[1]}: {count} occurrences")
-                except Exception as e:
-                    st.error(f"Skills analysis error: {str(e)}")
-                    st.write("No technical skills data available")
+                    else:
+                        st.info("No technical skills found in the data")
+            except Exception as e:
+                st.error(f"Skills analysis error: {str(e)}")
+                st.write("No technical skills data available")
 
     with tabs[1]:  # Analytics Tab
         st.markdown("### 📈 Advanced Analytics")
