@@ -1,21 +1,26 @@
 import streamlit as st
-import firebase_admin
-from firebase_admin import credentials, firestore
+import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import LabelEncoder
-from sklearn.cluster import KMeans
-import numpy as np
-from auth import check_password
-import plotly.graph_objects as go
 from datetime import datetime
+
+# ML imports
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, classification_report
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
-from plotly.subplots import make_subplots
+from sklearn.metrics import r2_score, mean_squared_error, accuracy_score, classification_report
+
+# Firebase imports
+import firebase_admin
+from firebase_admin import credentials, firestore
+from auth import check_password
 
 # Set style for seaborn
 sns.set_theme(style="whitegrid")
@@ -154,7 +159,7 @@ def get_survey_data():
     
     return pd.DataFrame(data)
 
-def create_sidebar_filters(df):
+def create_sidebar_filters(df: pd.DataFrame) -> dict:
     """Create sidebar filters for the dashboard."""
     st.sidebar.header("Filters")
     
@@ -473,13 +478,12 @@ if check_password():
             st.subheader("Technical Skills and Experience")
             try:
                 # Extract technical skills
-                all_skills = []
-                for _, row in filtered_df.iterrows():
-                    skills = row.get('skills', {})
-                    if isinstance(skills, dict):
-                        tech = skills.get('technical', [])
-                        if isinstance(tech, list):
-                            all_skills.extend(tech)
+                all_skills = [
+                    skill 
+                    for _, row in filtered_df.iterrows()
+                    for skill in row.get('skills', {}).get('technical', [])
+                    if isinstance(row.get('skills', {}), dict)
+                ]
                 
                 if all_skills:
                     skills_df = pd.DataFrame(all_skills, columns=['Skill'])
@@ -929,7 +933,6 @@ if check_password():
                         cluster_df = pd.DataFrame(cluster_data)
                         
                         # Standardize features
-                        from sklearn.preprocessing import StandardScaler
                         X_cluster = StandardScaler().fit_transform(cluster_df)
                         
                         # Perform K-means clustering
@@ -1000,7 +1003,7 @@ if check_password():
                         for i in range(n_clusters):
                             stats = cluster_stats.iloc[i]
                             st.write(f"**Cluster {i}** ({stats['Count']} members):")
-                            st.write(f"- Average Experience: {stats['Avg Years']} years")
+                            st.write(f"- Average Experience: {stats['Avg Years']:.1f} years")
                             st.write(f"- Typical Project Size: {stats['Avg Project Size']:.1f}")
                             st.write(f"- Personality Score: {stats['Avg Personality Score']:.1f}")
                             st.write("")
@@ -1422,13 +1425,12 @@ if check_password():
                 st.subheader("Skills Distribution")
                 try:
                     # Extract technical skills
-                    all_skills = []
-                    for _, row in filtered_df.iterrows():
-                        skills = row.get('skills', {})
-                        if isinstance(skills, dict):
-                            tech = skills.get('technical', [])
-                            if isinstance(tech, list):
-                                all_skills.extend(tech)
+                    all_skills = [
+                        skill 
+                        for _, row in filtered_df.iterrows()
+                        for skill in row.get('skills', {}).get('technical', [])
+                        if isinstance(row.get('skills', {}), dict)
+                    ]
                     
                     if all_skills:
                         skills_df = pd.DataFrame(all_skills, columns=['Skill'])
