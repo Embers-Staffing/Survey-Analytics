@@ -426,7 +426,7 @@ if check_password():
             # Career Path Visualization
             st.subheader("Career Path Analysis")
             
-            # Create Sankey diagram of role progression
+            # Create role progression data
             role_progression = []
             for _, row in filtered_df.iterrows():
                 try:
@@ -440,69 +440,39 @@ if check_password():
                     target_role = target_role.replace('-', ' ').title()
                     
                     role_progression.append({
-                        'Years': years,
                         'Current Role': current_role,
-                        'Target Role': target_role
+                        'Target Role': target_role,
+                        'Count': 1
                     })
                 except:
                     continue
             
             if role_progression:
+                # Create DataFrame and aggregate counts
                 prog_df = pd.DataFrame(role_progression)
+                role_counts = prog_df.groupby(['Current Role', 'Target Role']).size().reset_index(name='Count')
                 
-                # Create Sankey diagram with basic styling
-                fig = go.Figure(data=[go.Sankey(
-                    node = dict(
-                        pad = 20,
-                        thickness = 30,
-                        line = dict(color = "black", width = 0.5),
-                        label = prog_df['Current Role'].unique(),
-                        # Use basic colors
-                        color = "lightblue",  # Single color for all nodes
-                        font = dict(size = 12, color = "black")
-                    ),
-                    link = dict(
-                        source = prog_df['Current Role'].apply(lambda x: prog_df[prog_df['Current Role'] == x].index.values),
-                        target = prog_df['Target Role'].apply(lambda x: prog_df[prog_df['Target Role'] == x].index.values),
-                        value = prog_df['Years'],
-                        # Use basic color for links
-                        color = "rgba(0, 150, 0, 0.4)"  # Light green with opacity
-                    )
-                )])
+                # Create Treemap
+                fig = px.treemap(
+                    role_counts,
+                    path=[px.Constant("All Roles"), 'Current Role', 'Target Role'],
+                    values='Count',
+                    title='Career Progression Paths',
+                    color='Count',
+                    color_continuous_scale='RdBu',
+                    hover_data=['Count']
+                )
                 
                 # Update layout
                 fig.update_layout(
                     title_text="Career Progression Paths",
                     font_size=12,
                     height=600,
-                    margin=dict(t=40, l=0, r=0, b=0)
+                    margin=dict(t=50, l=25, r=25, b=25)
                 )
                 
-                # Show diagram
+                # Show visualization
                 st.plotly_chart(fig, use_container_width=True)
-                
-                # Add summary statistics
-                st.subheader("Career Transition Summary")
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.write("Most Common Current Roles:")
-                    current_role_counts = prog_df['Current Role'].value_counts().head(3)
-                    for role, count in current_role_counts.items():
-                        st.write(f"- {role}: {count} respondents")
-                
-                with col2:
-                    st.write("Most Desired Target Roles:")
-                    target_role_counts = prog_df['Target Role'].value_counts().head(3)
-                    for role, count in target_role_counts.items():
-                        st.write(f"- {role}: {count} respondents")
-                
-                # Add explanation
-                st.info("""
-                This Sankey diagram shows career progression paths from current roles (left) 
-                to target roles (right). The width of each flow indicates the number of 
-                respondents following that path. Hover over the diagram for detailed information.
-                """)
 
         # Skills Analysis
         with st.expander("Skills Analysis", expanded=True):
