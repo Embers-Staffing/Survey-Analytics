@@ -477,17 +477,16 @@ if check_password():
                         thickness = 25,  # Adjusted thickness
                         line = dict(color = "black", width = 0.5),
                         label = all_roles,
-                        # Use a list of colors instead of a color scale
-                        color = ["#" + ''.join([hex(x)[2:].zfill(2) for x in np.random.randint(0, 256, 3)]) 
-                                for _ in range(len(all_roles))],
+                        # Use a simple color array
+                        color = ['rgba(31, 119, 180, 0.8)'] * len(all_roles),
                         font = dict(size = 14, color = "black")  # Larger, clearer font
                     ),
                     link = dict(
                         source = source,
                         target = target,
                         value = value,
-                        # Use a consistent color with opacity
-                        color = ["rgba(44, 160, 44, 0.4)"] * len(source)
+                        # Use a simple color with opacity
+                        color = ['rgba(44, 160, 44, 0.4)'] * len(source)
                     )
                 )])
                 
