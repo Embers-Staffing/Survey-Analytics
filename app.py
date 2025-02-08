@@ -418,8 +418,8 @@ if check_password():
                     # Add visualization selector
                     viz_type = st.selectbox(
                         "Select Visualization Type",
-                        ["Distribution"],  # Simplified to just Distribution for now
-                        key="skills_viz_selector_overview"  # Added unique key
+                        ["Distribution", "Heatmap"],  # Added Heatmap option
+                        key="skills_viz_selector_overview"
                     )
                     
                     if viz_type == "Distribution":
@@ -467,6 +467,39 @@ if check_password():
                             'Percentage': (skill_counts.values / len(skills_df) * 100).round(1)
                         })
                         st.dataframe(summary_df, use_container_width=True)
+                    elif viz_type == "Heatmap":
+                        st.subheader("Skills Co-occurrence Heatmap")
+                        
+                        # Group skills by response
+                        skill_groups = []
+                        for _, row in filtered_df.iterrows():
+                            skills = row.get('skills', {}).get('technical', [])
+                            if isinstance(skills, list):
+                                skill_groups.append(skills)
+                        
+                        # Create co-occurrence matrix
+                        all_unique_skills = list(set([s for group in skill_groups for s in group]))
+                        co_occurrence = np.zeros((len(all_unique_skills), len(all_unique_skills)))
+                        
+                        for group in skill_groups:
+                            for i, skill1 in enumerate(all_unique_skills):
+                                for j, skill2 in enumerate(all_unique_skills):
+                                    if skill1 in group and skill2 in group:
+                                        co_occurrence[i, j] += 1
+                        
+                        # Create heatmap
+                        fig = px.imshow(
+                            co_occurrence,
+                            x=all_unique_skills,
+                            y=all_unique_skills,
+                            title="Skill Co-occurrence Matrix",
+                            color_continuous_scale="Viridis"
+                        )
+                        st.plotly_chart(fig, use_container_width=True, key="skills_heatmap_overview")
+                        
+                        # Add explanation
+                        st.info("This heatmap shows how often different skills appear together in responses. " +
+                               "Darker colors indicate skills that are more frequently found together.")
                     else:
                         st.info("No technical skills found in the data")
             except Exception as e:
