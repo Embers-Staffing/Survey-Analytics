@@ -1073,6 +1073,79 @@ if check_password():
                             st.write(f"  • Level {level}: {avg:.1f}")
                         st.write("")
                     
+                    # Enhanced Correlation Analysis with Heatmap
+                    st.subheader("Feature Correlation Analysis")
+                    
+                    # Prepare correlation data
+                    corr_matrix = regression_df.corr()
+                    
+                    # Create enhanced heatmap
+                    fig = px.imshow(
+                        corr_matrix,
+                        x=corr_matrix.columns,
+                        y=corr_matrix.columns,
+                        color_continuous_scale='RdBu_r',  # Red-Blue diverging colorscale
+                        aspect='auto',
+                        title='Feature Correlation Heatmap'
+                    )
+                    
+                    # Add correlation values as text
+                    fig.update_traces(
+                        text=corr_matrix.round(2),
+                        texttemplate='%{text}',
+                        textfont={'size': 12},
+                        hoverongaps=False,
+                        hovertemplate='%{x} vs %{y}<br>Correlation: %{z:.2f}<extra></extra>'
+                    )
+                    
+                    # Update layout
+                    fig.update_layout(
+                        width=700,
+                        height=600,
+                        xaxis_title='',
+                        yaxis_title='',
+                        xaxis={'side': 'bottom'},
+                        coloraxis_colorbar_title='Correlation'
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Add interpretation
+                    st.info("""
+                    Correlation Interpretation:
+                    - Values range from -1 (perfect negative correlation) to 1 (perfect positive correlation)
+                    - 0 indicates no correlation
+                    - Darker red indicates stronger positive correlation
+                    - Darker blue indicates stronger negative correlation
+                    """)
+                    
+                    # Add detailed correlation analysis
+                    st.subheader("Key Correlations")
+                    correlations = []
+                    for i in range(len(corr_matrix.columns)):
+                        for j in range(i+1, len(corr_matrix.columns)):
+                            col1, col2 = corr_matrix.columns[i], corr_matrix.columns[j]
+                            corr = corr_matrix.iloc[i, j]
+                            correlations.append({
+                                'Features': f"{col1} vs {col2}",
+                                'Correlation': corr,
+                                'Strength': abs(corr)
+                            })
+                    
+                    # Sort by absolute correlation strength
+                    correlations_df = pd.DataFrame(correlations).sort_values('Strength', ascending=False)
+                    
+                    # Display top correlations
+                    for _, row in correlations_df.iterrows():
+                        st.write(f"**{row['Features']}**: {row['Correlation']:.3f}")
+                        # Add interpretation
+                        if abs(row['Correlation']) > 0.7:
+                            st.write("→ Strong correlation")
+                        elif abs(row['Correlation']) > 0.4:
+                            st.write("→ Moderate correlation")
+                        else:
+                            st.write("→ Weak correlation")
+                    
                 except Exception as e:
                     st.error(f"Regression analysis error: {str(e)}")
                     st.write("Unable to perform regression analysis")
