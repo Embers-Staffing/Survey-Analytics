@@ -996,6 +996,113 @@ if check_password():
                     
                     st.plotly_chart(fig, use_container_width=True)
                     
+                    # PCA Analysis
+                    st.subheader("PCA Analysis")
+                    
+                    # Prepare data for PCA
+                    from sklearn.preprocessing import StandardScaler
+                    from sklearn.decomposition import PCA
+                    
+                    # Standardize features
+                    scaler = StandardScaler()
+                    X_scaled = scaler.fit_transform(X)
+                    
+                    # Perform PCA
+                    pca = PCA()
+                    X_pca = pca.fit_transform(X_scaled)
+                    
+                    # Calculate explained variance ratio
+                    explained_variance = pca.explained_variance_ratio_
+                    cumulative_variance = np.cumsum(explained_variance)
+                    
+                    # Create subplot figure
+                    fig = make_subplots(
+                        rows=1, cols=2,
+                        subplot_titles=(
+                            'Explained Variance Ratio',
+                            'Cumulative Explained Variance'
+                        )
+                    )
+                    
+                    # Add bar plot for explained variance
+                    fig.add_trace(
+                        go.Bar(
+                            x=[f'PC{i+1}' for i in range(len(explained_variance))],
+                            y=explained_variance,
+                            name='Explained Variance',
+                            marker_color='rgb(55, 83, 109)'
+                        ),
+                        row=1, col=1
+                    )
+                    
+                    # Add line plot for cumulative variance
+                    fig.add_trace(
+                        go.Scatter(
+                            x=[f'PC{i+1}' for i in range(len(cumulative_variance))],
+                            y=cumulative_variance,
+                            name='Cumulative Variance',
+                            mode='lines+markers',
+                            marker=dict(color='rgb(26, 118, 255)')
+                        ),
+                        row=1, col=2
+                    )
+                    
+                    # Update layout
+                    fig.update_layout(
+                        height=400,
+                        showlegend=True,
+                        title_text="PCA Explained Variance Analysis"
+                    )
+                    
+                    # Update axes labels
+                    fig.update_xaxes(title_text="Principal Components", row=1, col=1)
+                    fig.update_xaxes(title_text="Principal Components", row=1, col=2)
+                    fig.update_yaxes(title_text="Explained Variance Ratio", row=1, col=1)
+                    fig.update_yaxes(title_text="Cumulative Explained Variance", row=1, col=2)
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Add feature importance based on PCA
+                    st.subheader("Feature Importance from PCA")
+                    
+                    # Calculate feature importance
+                    feature_importance = np.abs(pca.components_[0])
+                    feature_names = ['Years', 'Project Size']
+                    
+                    # Create feature importance DataFrame
+                    importance_df = pd.DataFrame({
+                        'Feature': feature_names,
+                        'Importance': feature_importance
+                    }).sort_values('Importance', ascending=True)
+                    
+                    # Create horizontal bar chart
+                    fig = px.bar(
+                        importance_df,
+                        x='Importance',
+                        y='Feature',
+                        orientation='h',
+                        title='Feature Importance from First Principal Component',
+                        color='Importance',
+                        color_continuous_scale='Viridis'
+                    )
+                    
+                    fig.update_layout(
+                        xaxis_title='Absolute Coefficient Value',
+                        yaxis_title='Feature',
+                        height=300
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Add interpretation
+                    st.info("""
+                    PCA Analysis Interpretation:
+                    - Bars show how much variance each principal component explains
+                    - Line shows cumulative explained variance
+                    - Higher importance values indicate more influential features
+                    - First principal component shows the most important patterns in the data
+                    """)
+                    
                     # Decision Boundary Plot
                     st.subheader("Decision Boundary Analysis")
                     
