@@ -477,16 +477,16 @@ if check_password():
                         thickness = 25,  # Adjusted thickness
                         line = dict(color = "black", width = 0.5),
                         label = all_roles,
-                        # Use a simple color array
-                        color = "#1f77b4",  # Single color for all nodes
+                        # Use a list of colors for nodes
+                        color = ["#1f77b4"] * len(all_roles),  # Same blue color for all nodes
                         font = dict(size = 14, color = "black")  # Larger, clearer font
                     ),
                     link = dict(
                         source = source,
                         target = target,
                         value = value,
-                        # Use a simple color with opacity
-                        color = "rgba(44, 160, 44, 0.4)"  # Single color for all links
+                        # Use a list of colors for links
+                        color = ["rgba(44, 160, 44, 0.4)"] * len(source)  # Same green color for all links
                     )
                 )])
                 
