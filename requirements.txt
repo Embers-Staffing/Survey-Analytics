@@ -5,4 +5,5 @@ plotly
 python-dotenv
 seaborn
 scikit-learn
-numpy 
+numpy
+matplotlib 
