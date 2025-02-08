@@ -896,6 +896,115 @@ if check_password():
                         st.write(f"- Preferred Environments: {', '.join(cluster_data['environment'].value_counts().head(2).index)}")
                         st.write("---")
                     
+                    # K-Means Clustering Analysis
+                    st.subheader("Personality Cluster Analysis")
+                    
+                    # Prepare data for clustering
+                    cluster_data = []
+                    for _, row in filtered_df.iterrows():
+                        try:
+                            # Get numeric features
+                            years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                            project_size = {
+                                'small': 1, 'medium': 2, 'large': 3
+                            }.get(row.get('skills', {}).get('experience', {}).get('projectSize', 'small'), 1)
+                            
+                            # Get personality type
+                            mbti = row.get('personalityTraits', {}).get('myersBriggs', {})
+                            personality_score = sum([
+                                1 if trait[0] in ['E', 'S', 'T', 'J'] else 0
+                                for trait_list in mbti.values()
+                                for trait in trait_list[:1]
+                            ]) if mbti else 2  # Default middle value
+                            
+                            cluster_data.append({
+                                'Years': years,
+                                'Project Size': project_size,
+                                'Personality Score': personality_score
+                            })
+                        except:
+                            continue
+                    
+                    if cluster_data:
+                        cluster_df = pd.DataFrame(cluster_data)
+                        
+                        # Standardize features
+                        from sklearn.preprocessing import StandardScaler
+                        X_cluster = StandardScaler().fit_transform(cluster_df)
+                        
+                        # Perform K-means clustering
+                        from sklearn.cluster import KMeans
+                        n_clusters = 3
+                        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+                        clusters = kmeans.fit_predict(X_cluster)
+                        
+                        # Add clusters to dataframe
+                        cluster_df['Cluster'] = clusters
+                        
+                        # Create 3D scatter plot
+                        fig = px.scatter_3d(
+                            cluster_df,
+                            x='Years',
+                            y='Project Size',
+                            z='Personality Score',
+                            color='Cluster',
+                            title='Personality Clusters',
+                            labels={
+                                'Years': 'Years of Experience',
+                                'Project Size': 'Project Size (1=Small, 3=Large)',
+                                'Personality Score': 'Personality Type Score'
+                            },
+                            color_continuous_scale='Viridis'
+                        )
+                        
+                        # Update layout
+                        fig.update_layout(
+                            scene = dict(
+                                xaxis_title='Years of Experience',
+                                yaxis_title='Project Size',
+                                zaxis_title='Personality Score'
+                            ),
+                            height=700
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Add cluster analysis
+                        st.subheader("Cluster Analysis")
+                        
+                        # Calculate cluster statistics
+                        cluster_stats = cluster_df.groupby('Cluster').agg({
+                            'Years': ['mean', 'count'],
+                            'Project Size': 'mean',
+                            'Personality Score': 'mean'
+                        }).round(2)
+                        
+                        # Format cluster statistics
+                        cluster_stats.columns = [
+                            'Avg Years', 'Count', 'Avg Project Size', 'Avg Personality Score'
+                        ]
+                        st.dataframe(cluster_stats)
+                        
+                        # Add interpretation
+                        st.info("""
+                        Cluster Analysis Interpretation:
+                        - Each point represents a survey respondent
+                        - Colors indicate different personality clusters
+                        - Clusters are based on years of experience, project size, and personality type
+                        - Similar profiles are grouped together
+                        - Hover over points to see detailed information
+                        """)
+                        
+                        # Add cluster descriptions
+                        st.subheader("Cluster Profiles")
+                        for i in range(n_clusters):
+                            stats = cluster_stats.iloc[i]
+                            st.write(f"**Cluster {i}** ({stats['Count']} members):")
+                            st.write(f"- Average Experience: {stats['Avg Years']} years")
+                            st.write(f"- Typical Project Size: {stats['Avg Project Size']:.1f}")
+                            st.write(f"- Personality Score: {stats['Avg Personality Score']:.1f}")
+                            st.write("")
+                    
                 except Exception as e:
                     st.error(f"Clustering error: {str(e)}")
                     st.write("Unable to generate personality cluster visualization")
