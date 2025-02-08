@@ -52,23 +52,40 @@ def create_correlation_heatmap(df, columns):
     return fig
 
 def analyze_personality_clusters(df):
-    # Prepare data for clustering
-    le = LabelEncoder()
-    
-    # Encode Holland codes
-    holland_encoded = pd.get_dummies(df['personalityTraits.hollandCode'].apply(lambda x: x[0] if x else 'None'))
-    
-    # Encode MBTI
-    mbti_encoded = pd.get_dummies(df['personalityTraits.myersBriggs.attention'].apply(lambda x: x[0] if x else 'None'))
-    
-    # Combine features
-    features = pd.concat([holland_encoded, mbti_encoded], axis=1)
-    
-    # Perform clustering
-    kmeans = KMeans(n_clusters=3, random_state=42)
-    clusters = kmeans.fit_predict(features)
-    
-    return clusters
+    try:
+        # Prepare data for clustering
+        le = LabelEncoder()
+        
+        # Encode Holland codes
+        holland_codes = []
+        for idx, row in df.iterrows():
+            if isinstance(row.get('personalityTraits', {}).get('hollandCode'), list):
+                holland_codes.append(row['personalityTraits']['hollandCode'][0])
+            else:
+                holland_codes.append('None')
+        holland_encoded = pd.get_dummies(holland_codes)
+        
+        # Encode MBTI
+        mbti_codes = []
+        for idx, row in df.iterrows():
+            attention = row.get('personalityTraits', {}).get('myersBriggs', {}).get('attention', [])
+            if isinstance(attention, list) and attention:
+                mbti_codes.append(attention[0])
+            else:
+                mbti_codes.append('None')
+        mbti_encoded = pd.get_dummies(mbti_codes)
+        
+        # Combine features
+        features = pd.concat([holland_encoded, mbti_encoded], axis=1)
+        
+        # Perform clustering
+        kmeans = KMeans(n_clusters=3, random_state=42)
+        clusters = kmeans.fit_predict(features)
+        
+        return clusters
+    except Exception as e:
+        st.error("Unable to perform personality clustering")
+        return [0] * len(df)  # Return default cluster assignments
 
 # Check password
 if check_password():
@@ -160,31 +177,50 @@ if check_password():
         
         # Personality Clustering
         st.subheader("Personality Clusters")
-        clusters = analyze_personality_clusters(df)
-        df['Cluster'] = clusters
-        
-        fig = px.scatter(df, 
-                        x='personal_yearsInConstruction', 
-                        y='targetSalary',
-                        color='Cluster',
-                        title='Experience vs Salary Expectations by Personality Cluster')
-        st.plotly_chart(fig, use_container_width=True)
+        try:
+            clusters = analyze_personality_clusters(df)
+            df['Cluster'] = clusters
+            
+            fig = px.scatter(df, 
+                            x='personal_yearsInConstruction', 
+                            y='targetSalary',
+                            color='Cluster',
+                            title='Experience vs Salary Expectations by Personality Cluster')
+            st.plotly_chart(fig, use_container_width=True)
+        except:
+            st.write("Unable to generate personality cluster visualization")
         
         # Skills Analysis
         st.subheader("Skills Distribution")
-        tech_skills = pd.DataFrame([skill for skills in df['skills.technical'] for skill in skills])
-        fig = px.histogram(tech_skills, x=0, 
-                          title='Technical Skills Distribution',
-                          color_discrete_sequence=['#2ecc71'])
-        st.plotly_chart(fig, use_container_width=True)
+        try:
+            tech_skills = []
+            for idx, row in df.iterrows():
+                if isinstance(row.get('skills', {}).get('technical'), list):
+                    tech_skills.extend(row['skills']['technical'])
+            tech_skills_df = pd.DataFrame(tech_skills, columns=['skill'])
+            fig = px.histogram(tech_skills_df, x='skill', 
+                             title='Technical Skills Distribution',
+                             color_discrete_sequence=['#2ecc71'])
+            st.plotly_chart(fig, use_container_width=True)
+        except:
+            st.write("No technical skills data available")
         
         # Personality Insights with Advanced Visualization
         st.subheader("Personality Type Distribution")
-        fig, ax = plt.subplots(figsize=(12, 6))
-        sns.countplot(data=df, x='personalityTraits.myersBriggs.attention',
-                     palette='viridis', ax=ax)
-        plt.xticks(rotation=45)
-        st.pyplot(fig)
+        try:
+            mbti_data = []
+            for idx, row in df.iterrows():
+                attention = row.get('personalityTraits', {}).get('myersBriggs', {}).get('attention', [])
+                if isinstance(attention, list) and attention:
+                    mbti_data.append(attention[0])
+            mbti_df = pd.DataFrame(mbti_data, columns=['MBTI'])
+            
+            fig, ax = plt.subplots(figsize=(12, 6))
+            sns.countplot(data=mbti_df, x='MBTI', palette='viridis', ax=ax)
+            plt.xticks(rotation=45)
+            st.pyplot(fig)
+        except:
+            st.write("No MBTI data available")
 
     with tab3:
         st.header("Raw Data")
