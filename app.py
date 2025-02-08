@@ -44,29 +44,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Add theme selector to sidebar
-with st.sidebar:
-    # Use Streamlit's native theme
-    theme = st.selectbox(
-        "Theme",
-        options=["Light", "Dark"],
-        key="theme_select"
-    )
-
-    # Apply theme
-    if theme == "Dark":
-        st.markdown("""
-            <style>
-                /* Dark theme overrides */
-                [data-testid="stSidebar"] {
-                    background-color: #262730;
-                }
-                .stApp {
-                    background-color: #0E1117;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-
 # Add section headers with icons and descriptions
 def section_header(icon, title, description):
     st.markdown(f"""
