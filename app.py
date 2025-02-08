@@ -44,9 +44,35 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Add theme selector to sidebar
+# Add this near the top of your app, after the imports
+if 'theme' not in st.session_state:
+    st.session_state.theme = 'light'
+
+# Add theme switcher in sidebar
 with st.sidebar:
-    pass
+    theme = st.radio(
+        "Choose Theme",
+        options=["Light", "Dark"],
+        horizontal=True,
+        key="theme_radio"
+    )
+    st.session_state.theme = theme.lower()
+
+# Update the CSS variables based on theme
+st.markdown(f"""
+<style>
+    :root {{
+        --primary-color: {("#2E5077" if st.session_state.theme == 'light' else "#4A90E2")};
+        --background-color: {("#FFFFFF" if st.session_state.theme == 'light' else "#1E1E1E")};
+        --secondary-bg: {("#F8F9FA" if st.session_state.theme == 'light' else "#2D2D2D")};
+        --text-color: {("#1E1E1E" if st.session_state.theme == 'light' else "#E0E0E0")};
+        --border-color: {("#E9ECEF" if st.session_state.theme == 'light' else "#404040")};
+        --shadow: {("0 2px 4px rgba(0,0,0,0.05)" if st.session_state.theme == 'light' else "0 2px 4px rgba(0,0,0,0.2)")};
+        --radius: 8px;
+        --spacing: 1rem;
+    }}
+</style>
+""", unsafe_allow_html=True)
 
 # Add section headers with icons and descriptions
 def section_header(icon, title, description):
@@ -1101,86 +1127,4 @@ if check_password():
                 lambda x: x.str.contains(search_term, case=False).any(), axis=1
             )]
         
-        st.dataframe(filtered_df)
-
-# Add this at the top of your app
-st.markdown("""
-<style>
-    :root {
-        --primary-color: #2E5077;
-        --background-color: #FFFFFF;
-        --secondary-bg: #F8F9FA;
-        --text-color: #1E1E1E;
-        --border-color: #E9ECEF;
-        --shadow: 0 2px 4px rgba(0,0,0,0.05);
-        --radius: 8px;
-        --spacing: 1rem;
-    }
-
-    [data-theme="dark"] {
-        --primary-color: #4A90E2;
-        --background-color: #1E1E1E;
-        --secondary-bg: #2D2D2D;
-        --text-color: #E0E0E0;
-        --border-color: #404040;
-        --shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-
-    /* Components */
-    .stApp {
-        background-color: var(--background-color);
-        color: var(--text-color);
-    }
-
-    .metric-container {
-        background-color: var(--secondary-bg);
-        border: 1px solid var(--border-color);
-        padding: var(--spacing);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-    }
-
-    .card {
-        background-color: var(--secondary-bg);
-        border-radius: var(--radius);
-        padding: var(--spacing);
-        margin: var(--spacing) 0;
-        border: 1px solid var(--border-color);
-        box-shadow: var(--shadow);
-    }
-
-    /* Typography */
-    h1, h2, h3 {
-        color: var(--text-color);
-    }
-
-    /* Interactive elements */
-    button {
-        background-color: var(--primary-color);
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: var(--radius);
-        cursor: pointer;
-        transition: opacity 0.2s;
-    }
-
-    button:hover {
-        opacity: 0.9;
-    }
-
-    /* Custom classes */
-    .flex-container {
-        display: flex;
-        gap: var(--spacing);
-        margin: var(--spacing) 0;
-    }
-
-    .grid-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: var(--spacing);
-        margin: var(--spacing) 0;
-    }
-</style>
-""", unsafe_allow_html=True) 
+        st.dataframe(filtered_df) 
