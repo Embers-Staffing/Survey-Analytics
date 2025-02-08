@@ -478,7 +478,7 @@ if check_password():
                         line = dict(color = "black", width = 0.5),
                         label = all_roles,
                         # Use a simple color array
-                        color = ['rgba(31, 119, 180, 0.8)'] * len(all_roles),
+                        color = "#1f77b4",  # Single color for all nodes
                         font = dict(size = 14, color = "black")  # Larger, clearer font
                     ),
                     link = dict(
@@ -486,7 +486,7 @@ if check_password():
                         target = target,
                         value = value,
                         # Use a simple color with opacity
-                        color = ['rgba(44, 160, 44, 0.4)'] * len(source)
+                        color = "rgba(44, 160, 44, 0.4)"  # Single color for all links
                     )
                 )])
                 
