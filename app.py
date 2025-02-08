@@ -448,11 +448,9 @@ if check_password():
                     continue
             
             if role_progression:
-                # Create DataFrame and aggregate counts
-                prog_df = pd.DataFrame(role_progression)
-                
                 # Create Alluvial Diagram
-                fig = go.Figure(data=[go.Sankey(
+                prog_df = pd.DataFrame(role_progression)
+                fig_alluvial = go.Figure(data=[go.Sankey(
                     node = dict(
                         pad = 15,
                         thickness = 20,
@@ -475,16 +473,15 @@ if check_password():
                     )
                 )])
                 
-                # Update layout
-                fig.update_layout(
+                fig_alluvial.update_layout(
                     title_text="Career Progression Flow",
                     font_size=12,
                     height=600,
                     margin=dict(t=50, l=25, r=25, b=25)
                 )
                 
-                # Show visualization
-                st.plotly_chart(fig, use_container_width=True)
+                # Add unique key for Alluvial diagram
+                st.plotly_chart(fig_alluvial, use_container_width=True, key="career_flow_sankey")
                 
                 # Add explanation
                 st.info("""
@@ -495,6 +492,76 @@ if check_password():
                 
                 The width of the flows indicates the number of respondents following each path.
                 """)
+
+            # Second: Time Series Line Graph
+            st.subheader("Experience Trends Over Time")
+            # Prepare time series data
+            time_data = []
+            for _, row in filtered_df.iterrows():
+                try:
+                    submission_date = pd.to_datetime(row['submittedAt'])
+                    years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                    role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                    salary_level = row.get('goals', {}).get('targetSalary', 'entry')
+                    
+                    time_data.append({
+                        'Date': submission_date,
+                        'Years': years,
+                        'Role': role.replace('-', ' ').title(),
+                        'Salary Level': salary_level.title()
+                    })
+                except:
+                    continue
+            
+            if time_data:
+                time_df = pd.DataFrame(time_data)
+                time_df = time_df.sort_values('Date')
+                
+                # Create line graph
+                fig = go.Figure()
+                
+                # Add lines for each role
+                for role in time_df['Role'].unique():
+                    role_data = time_df[time_df['Role'] == role]
+                    fig.add_trace(go.Scatter(
+                        x=role_data['Date'],
+                        y=role_data['Years'],
+                        name=role,
+                        mode='lines+markers',
+                        hovertemplate="<b>%{x}</b><br>" +
+                                    "Role: " + role + "<br>" +
+                                    "Years: %{y:.1f}<br>"
+                    ))
+                
+                # Update layout
+                fig.update_layout(
+                    title="Experience Trends by Role",
+                    xaxis_title="Submission Date",
+                    yaxis_title="Years of Experience",
+                    hovermode='x unified',
+                    height=500,
+                    showlegend=True,
+                    legend=dict(
+                        yanchor="top",
+                        y=0.99,
+                        xanchor="left",
+                        x=0.01
+                    )
+                )
+                
+                # Add unique key for line graph
+                st.plotly_chart(fig, use_container_width=True, key="career_trends_line")
+                
+                # Add trend analysis
+                st.info("""
+                Trend Analysis:
+                - Lines show experience progression for each role
+                - Steeper slopes indicate faster experience growth
+                - Hover over points to see detailed information
+                - Compare trends between different roles
+                """)
+            else:
+                st.warning("No time series data available")
 
         # Skills Analysis
         with st.expander("Skills Analysis", expanded=True):
@@ -1148,7 +1215,8 @@ if check_password():
                             margin=dict(t=50, l=25, r=25, b=25)
                         )
                         
-                        st.plotly_chart(fig_alluvial, use_container_width=True)
+                        # Add unique key for Alluvial diagram
+                        st.plotly_chart(fig_alluvial, use_container_width=True, key="career_flow_sankey")
                         
                         # Add explanation for Alluvial
                         st.info("""
@@ -1216,7 +1284,8 @@ if check_password():
                             )
                         )
                         
-                        st.plotly_chart(fig, use_container_width=True)
+                        # Add unique key for line graph
+                        st.plotly_chart(fig, use_container_width=True, key="career_trends_line")
                         
                         # Add trend analysis
                         st.info("""
