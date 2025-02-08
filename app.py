@@ -349,27 +349,16 @@ if check_password():
                     
                     if roles:
                         role_counts = {}
-                        total_responses = len(roles)
                         for role in roles:
                             role_counts[role] = role_counts.get(role, 0) + 1
                         
-                        # Get top 3 roles with percentages
-                        top_roles = sorted(role_counts.items(), key=lambda x: x[1], reverse=True)[:3]
-                        
-                        # Format the display with better spacing
-                        roles_text = "\n".join([
-                            f"{role.replace('-', ' ').title()}: {count} ({(count/total_responses*100):.1f}%)"
-                            for role, count in top_roles
-                        ])
-                        st.metric(
-                            "Most Common Roles",
-                            roles_text,
-                            help="Top 3 roles by number of respondents"
-                        )
+                        # Get most common role
+                        most_common = max(role_counts.items(), key=lambda x: x[1])[0]
+                        st.metric("Most Common Role", most_common.replace('-', ' ').title())
                     else:
-                        st.metric("Most Common Roles", "N/A")
+                        st.metric("Most Common Role", "N/A")
                 except Exception as e:
-                    st.metric("Most Common Roles", "N/A")
+                    st.metric("Most Common Role", "N/A")
                     st.write(f"Error calculating roles: {str(e)}")
 
         # Career Development
