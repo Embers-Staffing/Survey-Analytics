@@ -51,67 +51,107 @@ theme = st.sidebar.selectbox('Theme', ['Light', 'Dark'])
 if theme == 'Dark':
     st.markdown("""
     <style>
-        /* Dark theme */
+        /* Dark theme with improved colors */
         .main {
-            background-color: #0E1117;
-            color: #FAFAFA;
+            background-color: #1E1E1E;
+            color: #E0E0E0;
         }
         
         /* Headers */
         h1, h2, h3 {
-            color: #FAFAFA !important;
+            color: #E0E0E0 !important;
+            border-bottom-color: #333333 !important;
         }
         
         /* Metrics */
         div[data-testid="metric-container"] {
-            background-color: #262730;
-            border: 1px solid #1E1E1E;
-            color: #FAFAFA;
+            background-color: #2D2D2D;
+            border: 1px solid #404040;
+            color: #E0E0E0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         
         /* Expanders */
         div[data-testid="stExpander"] {
-            background-color: #262730;
-            border: 1px solid #1E1E1E;
+            background-color: #2D2D2D;
+            border: 1px solid #404040;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         
         /* Tabs */
         .stTabs [data-baseweb="tab-list"] {
-            background-color: #262730;
+            background-color: #2D2D2D;
+            border: 1px solid #404040;
         }
         
         .stTabs [data-baseweb="tab"] {
-            color: #FAFAFA;
+            color: #E0E0E0;
+        }
+        
+        .stTabs [data-baseweb="tab"]:hover {
+            background-color: #404040;
         }
         
         /* Charts container */
         div[data-testid="stHorizontalBlock"] {
-            background-color: #262730;
+            background-color: transparent;
         }
         
         /* Tables */
         div[data-testid="stTable"] {
-            background-color: #262730;
-            color: #FAFAFA;
+            background-color: #2D2D2D;
+            color: #E0E0E0;
+            border: 1px solid #404040;
         }
         
         /* Inputs */
         div[data-baseweb="select"] {
-            background-color: #262730;
-            color: #FAFAFA;
+            background-color: #2D2D2D;
+            color: #E0E0E0;
+            border: 1px solid #404040;
+        }
+        
+        /* Sidebar */
+        section[data-testid="stSidebar"] {
+            background-color: #2D2D2D;
+            border-right: 1px solid #404040;
         }
         
         /* Footer */
         .footer {
-            background-color: #262730;
-            color: #FAFAFA;
-            border-top: 1px solid #1E1E1E;
+            background-color: #2D2D2D;
+            color: #E0E0E0;
+            border-top: 1px solid #404040;
+        }
+        
+        /* Plotly charts background */
+        .js-plotly-plot .plotly .main-svg {
+            background-color: #2D2D2D !important;
+        }
+        
+        /* DataFrames */
+        .dataframe {
+            background-color: #2D2D2D;
+            color: #E0E0E0;
         }
         
         /* Info boxes */
         div[data-testid="stAlert"] {
-            background-color: #262730;
-            color: #FAFAFA;
+            background-color: #2D2D2D;
+            color: #E0E0E0;
+            border: 1px solid #404040;
+        }
+        
+        /* Buttons */
+        button {
+            background-color: #404040 !important;
+            color: #E0E0E0 !important;
+            border: 1px solid #505050 !important;
+        }
+        
+        button:hover {
+            background-color: #505050 !important;
+            border: 1px solid #606060 !important;
         }
     </style>
     """, unsafe_allow_html=True)
