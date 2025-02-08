@@ -118,131 +118,217 @@ def analyze_personality_clusters(df):
         st.error(f"Unable to perform personality clustering: {str(e)}")
         return [0] * len(df)
 
-# Check password
-if check_password():
-    st.title("Survey Response Dashboard")
+def get_survey_data():
+    """Fetch and process survey responses from Firebase."""
+    responses_ref = db.collection('responses')
+    docs = responses_ref.stream()
     
-    # Fetch and prepare data
-    def get_survey_data():
-        responses_ref = db.collection('responses')
-        docs = responses_ref.stream()
-        
-        data = []
-        for doc in docs:
-            doc_dict = doc.to_dict()
-            # Keep original nested structure
-            data.append(doc_dict)
-            
-            # Debug print
-            st.write("Sample data structure:", doc_dict.keys())
-            if 'personalityTraits' in doc_dict:
-                st.write("Personality structure:", doc_dict['personalityTraits'])
-            if 'skills' in doc_dict:
-                st.write("Skills structure:", doc_dict['skills'])
-        
-        return pd.DataFrame(data)
+    data = []
+    for doc in docs:
+        data.append(doc.to_dict())
+    
+    return pd.DataFrame(data)
 
-    df = get_survey_data()
+def create_sidebar_filters(df):
+    """Create sidebar filters for the dashboard."""
+    st.sidebar.header("Filters")
+    
+    # Date Range Filter
+    if 'submittedAt' in df.columns:
+        dates = pd.to_datetime(df['submittedAt'])
+        min_date = dates.min()
+        max_date = dates.max()
+        date_range = st.sidebar.date_input(
+            "Date Range",
+            value=(min_date, max_date),
+            min_value=min_date,
+            max_value=max_date
+        )
+    
+    # Role Filter
+    roles = set()
+    for _, row in df.iterrows():
+        role = row.get('skills', {}).get('experience', {}).get('role')
+        if role:
+            roles.add(role)
+    selected_roles = st.sidebar.multiselect("Roles", list(roles))
+    
+    # Experience Level Filter
+    years_ranges = ["0-2 years", "3-5 years", "5-10 years", "10+ years"]
+    selected_exp = st.sidebar.multiselect("Experience Level", years_ranges)
+    
+    return {
+        'date_range': date_range if 'submittedAt' in df.columns else None,
+        'roles': selected_roles,
+        'experience': selected_exp
+    }
 
+def apply_filters(df, filters):
+    """Apply selected filters to the dataframe."""
+    filtered_df = df.copy()
+    
+    if filters['date_range']:
+        mask = (pd.to_datetime(filtered_df['submittedAt']).dt.date >= filters['date_range'][0]) & \
+               (pd.to_datetime(filtered_df['submittedAt']).dt.date <= filters['date_range'][1])
+        filtered_df = filtered_df[mask]
+    
+    if filters['roles']:
+        filtered_df = filtered_df[filtered_df.apply(
+            lambda x: x.get('skills', {}).get('experience', {}).get('role') in filters['roles'],
+            axis=1
+        )]
+    
+    return filtered_df
+
+# Main dashboard code
+if check_password():
+    st.title("Construction Career Survey Dashboard")
+    
+    # Load data
+    with st.spinner("Loading survey data..."):
+        df = get_survey_data()
+    
+    # Create filters
+    filters = create_sidebar_filters(df)
+    
+    # Apply filters
+    filtered_df = apply_filters(df, filters)
+    
     # Dashboard Tabs
-    tab1, tab2, tab3 = st.tabs(["Overview", "Advanced Analytics", "Raw Data"])
+    tab1, tab2, tab3 = st.tabs(["Overview 📊", "Advanced Analytics ��", "Raw Data 📋"])
 
     with tab1:
-        # Overview Section
-        st.header("Response Overview")
-        col1, col2, col3 = st.columns(3)
+        st.header("📊 Survey Overview")
         
-        with col1:
-            st.metric("Total Responses", len(df))
-        
-        with col2:
-            try:
-                years_list = []
-                for _, row in df.iterrows():
-                    personal_info = row['personalInfo']
-                    if isinstance(personal_info, dict):
-                        year_str = str(personal_info.get('yearsInConstruction', '0'))
-                        # Remove any non-numeric characters
-                        year_str = ''.join(c for c in year_str if c.isdigit())
-                        if year_str:
-                            years_list.append(float(year_str))
-                
-                if years_list:
-                    years_mean = round(sum(years_list) / len(years_list), 1)
-                    st.metric("Average Years in Construction", years_mean)
-                else:
+        # Key Metrics
+        with st.container():
+            st.subheader("Key Metrics")
+            metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
+            
+            with metrics_col1:
+                st.metric(
+                    "Total Responses",
+                    len(filtered_df),
+                    delta=f"{len(filtered_df) - len(df)} filtered"
+                )
+            
+            with metrics_col2:
+                try:
+                    years_list = []
+                    for _, row in filtered_df.iterrows():
+                        personal_info = row['personalInfo']
+                        if isinstance(personal_info, dict):
+                            year_str = str(personal_info.get('yearsInConstruction', '0'))
+                            # Remove any non-numeric characters
+                            year_str = ''.join(c for c in year_str if c.isdigit())
+                            if year_str:
+                                years_list.append(float(year_str))
+                    
+                    if years_list:
+                        years_mean = round(sum(years_list) / len(years_list), 1)
+                        st.metric("Average Years in Construction", years_mean)
+                    else:
+                        st.metric("Average Years in Construction", "N/A")
+                except Exception as e:
                     st.metric("Average Years in Construction", "N/A")
-            except Exception as e:
-                st.metric("Average Years in Construction", "N/A")
-                st.write(f"Error calculating years: {str(e)}")
-        
-        with col3:
-            try:
-                roles = []
-                for _, row in df.iterrows():
-                    skills = row['skills']
-                    if isinstance(skills, dict) and 'experience' in skills:
-                        experience = skills['experience']
-                        if isinstance(experience, dict) and 'role' in experience:
-                            roles.append(experience['role'])
-                
-                if roles:
-                    role_counts = {}
-                    for role in roles:
-                        role_counts[role] = role_counts.get(role, 0) + 1
-                    most_common = max(role_counts.items(), key=lambda x: x[1])[0]
-                    st.metric("Most Common Role", most_common)
-                else:
+                    st.write(f"Error calculating years: {str(e)}")
+            
+            with metrics_col3:
+                try:
+                    roles = []
+                    for _, row in filtered_df.iterrows():
+                        skills = row['skills']
+                        if isinstance(skills, dict) and 'experience' in skills:
+                            experience = skills['experience']
+                            if isinstance(experience, dict) and 'role' in experience:
+                                roles.append(experience['role'])
+                    
+                    if roles:
+                        role_counts = {}
+                        for role in roles:
+                            role_counts[role] = role_counts.get(role, 0) + 1
+                        most_common = max(role_counts.items(), key=lambda x: x[1])[0]
+                        st.metric("Most Common Role", most_common)
+                    else:
+                        st.metric("Most Common Role", "N/A")
+                except Exception as e:
                     st.metric("Most Common Role", "N/A")
-            except Exception as e:
-                st.metric("Most Common Role", "N/A")
-                st.write(f"Error calculating roles: {str(e)}")
+                    st.write(f"Error calculating roles: {str(e)}")
 
-        # Career Development section
-        st.header("Career Development")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            try:
-                goals_list = []
-                for _, row in df.iterrows():
-                    goals = row['goals']
-                    if isinstance(goals, dict) and 'careerGoals' in goals:
-                        career_goals = goals['careerGoals']
-                        if isinstance(career_goals, list):
-                            goals_list.extend(career_goals)
-                
-                if goals_list:
-                    career_goals_df = pd.DataFrame(goals_list, columns=['goal'])
-                    fig = px.pie(career_goals_df, names='goal', 
-                               title='Career Goals Distribution',
-                               color_discrete_sequence=px.colors.qualitative.Set3)
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
+        # Career Development
+        with st.expander("🎯 Career Development Analysis", expanded=True):
+            st.subheader("Career Goals and Preferences")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                try:
+                    goals_list = []
+                    for _, row in filtered_df.iterrows():
+                        goals = row['goals']
+                        if isinstance(goals, dict) and 'careerGoals' in goals:
+                            career_goals = goals['careerGoals']
+                            if isinstance(career_goals, list):
+                                goals_list.extend(career_goals)
+                    
+                    if goals_list:
+                        career_goals_df = pd.DataFrame(goals_list, columns=['goal'])
+                        fig = px.pie(career_goals_df, names='goal', 
+                                   title='Career Goals Distribution',
+                                   color_discrete_sequence=px.colors.qualitative.Set3)
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.write("No career goals data available")
+                except Exception as e:
                     st.write("No career goals data available")
-            except Exception as e:
-                st.write("No career goals data available")
-                st.write(f"Error: {str(e)}")
-        
-        with col2:
+                    st.write(f"Error: {str(e)}")
+            
+            with col2:
+                try:
+                    prefs = []
+                    for _, row in filtered_df.iterrows():
+                        goals = row['goals']
+                        if isinstance(goals, dict) and 'advancementPreference' in goals:
+                            prefs.append(goals['advancementPreference'])
+                    
+                    if prefs:
+                        pref_df = pd.DataFrame(prefs, columns=['preference'])
+                        fig = px.pie(pref_df, names='preference',
+                                   title='Advancement Preferences',
+                                   color_discrete_sequence=px.colors.qualitative.Set3)
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.write("No advancement preference data available")
+                except Exception as e:
+                    st.write("No advancement preference data available")
+                    st.write(f"Error: {str(e)}")
+
+        # Skills Analysis
+        with st.expander("🛠️ Skills Analysis", expanded=True):
+            st.subheader("Technical Skills and Experience")
             try:
-                prefs = []
-                for _, row in df.iterrows():
-                    goals = row['goals']
-                    if isinstance(goals, dict) and 'advancementPreference' in goals:
-                        prefs.append(goals['advancementPreference'])
+                # Extract technical skills
+                all_skills = []
+                for _, row in filtered_df.iterrows():
+                    skills = row.get('skills', {})
+                    if isinstance(skills, dict):
+                        tech = skills.get('technical', [])
+                        if isinstance(tech, list):
+                            all_skills.extend(tech)
                 
-                if prefs:
-                    pref_df = pd.DataFrame(prefs, columns=['preference'])
-                    fig = px.pie(pref_df, names='preference',
-                               title='Advancement Preferences',
-                               color_discrete_sequence=px.colors.qualitative.Set3)
+                if all_skills:
+                    skills_df = pd.DataFrame(all_skills, columns=['Skill'])
+                    fig = px.histogram(
+                        skills_df,
+                        x='Skill',
+                        title='Technical Skills Distribution',
+                        color_discrete_sequence=['#2ecc71']
+                    )
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.write("No advancement preference data available")
+                    st.write("No technical skills found in the data")
             except Exception as e:
-                st.write("No advancement preference data available")
-                st.write(f"Error: {str(e)}")
+                st.error(f"Skills analysis error: {str(e)}")
+                st.write("No technical skills data available")
 
     with tab2:
         st.header("Advanced Analytics")
@@ -252,7 +338,7 @@ if check_password():
         try:
             # Create features for clustering
             features_data = []
-            for _, row in df.iterrows():
+            for _, row in filtered_df.iterrows():
                 try:
                     # Get years in construction
                     years_str = row.get('personalInfo', {}).get('yearsInConstruction', '0')
@@ -382,39 +468,12 @@ if check_password():
             st.error(f"Clustering error: {str(e)}")
             st.write("Unable to generate personality cluster visualization")
         
-        # Skills Analysis
-        st.subheader("Skills Distribution")
-        try:
-            # Extract technical skills
-            all_skills = []
-            for _, row in df.iterrows():
-                skills = row.get('skills', {})
-                if isinstance(skills, dict):
-                    tech = skills.get('technical', [])
-                    if isinstance(tech, list):
-                        all_skills.extend(tech)
-            
-            if all_skills:
-                skills_df = pd.DataFrame(all_skills, columns=['Skill'])
-                fig = px.histogram(
-                    skills_df,
-                    x='Skill',
-                    title='Technical Skills Distribution',
-                    color_discrete_sequence=['#2ecc71']
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.write("No technical skills found in the data")
-        except Exception as e:
-            st.error(f"Skills analysis error: {str(e)}")
-            st.write("No technical skills data available")
-        
         # Personality Insights
         st.subheader("Personality Type Distribution")
         try:
             # Extract MBTI data
             mbti_types = []
-            for _, row in df.iterrows():
+            for _, row in filtered_df.iterrows():
                 traits = row.get('personalityTraits', {})
                 if isinstance(traits, dict):
                     mbti = traits.get('myersBriggs', {})
@@ -452,7 +511,7 @@ if check_password():
         try:
             # Prepare data for regression
             regression_data = []
-            for _, row in df.iterrows():
+            for _, row in filtered_df.iterrows():
                 try:
                     years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
                     salary_level = {
@@ -577,4 +636,4 @@ if check_password():
 
     with tab3:
         st.header("Raw Data")
-        st.dataframe(df) 
+        st.dataframe(filtered_df) 
