@@ -13,6 +13,9 @@ import plotly.graph_objects as go
 from datetime import datetime
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, classification_report
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from plotly.subplots import make_subplots
 
 # Set style for seaborn
 sns.set_theme(style="whitegrid")
@@ -1055,27 +1058,131 @@ if check_password():
                     
                     st.plotly_chart(fig, use_container_width=True)
                     
+                    # Residual Plot Analysis
+                    st.subheader("Regression Residual Analysis")
+                    
+                    # Fit a simple linear regression for salary prediction
+                    model = LinearRegression()
+                    model.fit(X, y)
+                    
+                    # Make predictions
+                    y_pred = model.predict(X)
+                    
+                    # Calculate residuals
+                    residuals = y - y_pred
+                    
+                    # Create residual plots
+                    fig = make_subplots(
+                        rows=2, cols=2,
+                        subplot_titles=(
+                            'Residuals vs Predicted',
+                            'Residuals vs Years',
+                            'Residuals Distribution',
+                            'Residuals vs Project Size'
+                        )
+                    )
+                    
+                    # Residuals vs Predicted
+                    fig.add_trace(
+                        go.Scatter(
+                            x=y_pred,
+                            y=residuals,
+                            mode='markers',
+                            name='Residuals',
+                            marker=dict(color='blue', size=8)
+                        ),
+                        row=1, col=1
+                    )
+                    
+                    # Residuals vs Years
+                    fig.add_trace(
+                        go.Scatter(
+                            x=X[:, 0],
+                            y=residuals,
+                            mode='markers',
+                            name='Residuals',
+                            marker=dict(color='green', size=8)
+                        ),
+                        row=1, col=2
+                    )
+                    
+                    # Residuals Distribution
+                    fig.add_trace(
+                        go.Histogram(
+                            x=residuals,
+                            name='Residuals',
+                            nbinsx=20,
+                            marker_color='red'
+                        ),
+                        row=2, col=1
+                    )
+                    
+                    # Residuals vs Project Size
+                    fig.add_trace(
+                        go.Scatter(
+                            x=X[:, 1],
+                            y=residuals,
+                            mode='markers',
+                            name='Residuals',
+                            marker=dict(color='purple', size=8)
+                        ),
+                        row=2, col=2
+                    )
+                    
+                    # Update layout
+                    fig.update_layout(
+                        height=800,
+                        title_text="Regression Residual Analysis",
+                        showlegend=False
+                    )
+                    
+                    # Update axes labels
+                    fig.update_xaxes(title_text="Predicted Values", row=1, col=1)
+                    fig.update_xaxes(title_text="Years", row=1, col=2)
+                    fig.update_xaxes(title_text="Residuals", row=2, col=1)
+                    fig.update_xaxes(title_text="Project Size", row=2, col=2)
+                    
+                    fig.update_yaxes(title_text="Residuals", row=1, col=1)
+                    fig.update_yaxes(title_text="Residuals", row=1, col=2)
+                    fig.update_yaxes(title_text="Count", row=2, col=1)
+                    fig.update_yaxes(title_text="Residuals", row=2, col=2)
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Add model metrics
+                    st.subheader("Regression Model Metrics")
+                    from sklearn.metrics import r2_score, mean_squared_error
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric(
+                            "R² Score",
+                            f"{r2_score(y, y_pred):.3f}"
+                        )
+                        st.metric(
+                            "RMSE",
+                            f"{np.sqrt(mean_squared_error(y, y_pred)):.3f}"
+                        )
+                    
+                    with col2:
+                        st.metric(
+                            "R² Score (Training)",
+                            f"{r2_score(y, y_pred):.3f}"
+                        )
+                        st.metric(
+                            "RMSE (Training)",
+                            f"{np.sqrt(mean_squared_error(y, y_pred)):.3f}"
+                        )
+                    
                     # Add interpretation
                     st.info("""
-                    This decision boundary plot shows how Years of Experience and Project Size 
-                    influence Target Salary Levels:
-                    - Different colors represent different predicted salary levels
-                    - Points show actual data samples
-                    - Boundaries show where the model predicts transitions between salary levels
-                    - Clearer boundaries indicate stronger relationships between features and salary
+                    Residual Plot Interpretation:
+                    - Random scatter around zero indicates a good fit
+                    - Patterns suggest model assumptions may be violated
+                    - Normal distribution of residuals is ideal
+                    - R² closer to 1 indicates better model fit
+                    - Lower RMSE indicates better prediction accuracy
                     """)
-                    
-                    # Add accuracy metrics
-                    y_pred = clf.predict(X)
-                    accuracy = accuracy_score(y, y_pred)
-                    
-                    st.subheader("Classification Metrics")
-                    st.write(f"Model Accuracy: {accuracy:.2%}")
-                    
-                    # Show detailed classification report
-                    report = classification_report(y, y_pred, output_dict=True)
-                    report_df = pd.DataFrame(report).transpose()
-                    st.dataframe(report_df.round(2))
                     
                 except Exception as e:
                     st.error(f"Regression analysis error: {str(e)}")
