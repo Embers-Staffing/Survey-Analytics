@@ -61,34 +61,27 @@ st.markdown("""
     position: fixed;
     right: 30px;
     top: 75px;
-    background-color: #FF4B4B;
+    background-color: #1E67C7;  /* Changed to a professional blue */
     color: white;
     padding: 12px 24px;
-    text-decoration: none;
+    text-decoration: none !important;  /* Remove underline */
     border-radius: 25px;
-    font-weight: 600;
+    font-weight: 700;  /* Made text bolder */
     font-size: 16px;
     z-index: 999;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     transition: all 0.3s ease;
-    border: 2px solid #FF4B4B;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    border: 2px solid #1E67C7;
 }
 .survey-button:hover {
     background-color: white;
-    color: #FF4B4B;
+    color: #1E67C7;
     box-shadow: 0 6px 12px rgba(0,0,0,0.15);
     transform: translateY(-2px);
-    text-decoration: none;
-}
-.survey-button::before {
-    content: '📝';
-    font-size: 20px;
+    text-decoration: none !important;
 }
 </style>
-<a href="https://career-survey.netlify.app" target="_blank" class="survey-button">Take the Survey</a>
+<a href="https://career-survey.netlify.app" target="_blank" class="survey-button">TAKE THE SURVEY</a>
 """, unsafe_allow_html=True)
 
 # Add section headers with icons and descriptions
