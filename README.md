@@ -39,7 +39,22 @@ This dashboard provides insights into construction industry career paths, skills
 3. Configure Firebase:
    - Create a Firebase project
    - Set up Firestore database
-   - Add credentials to `.streamlit/secrets.toml`
+   - Create `.streamlit/secrets.toml` with the following structure:
+     ```toml
+     password = "your_dashboard_password"
+     
+     [firebase]
+     type = "service_account"
+     project_id = "your_project_id"
+     private_key_id = "your_private_key_id"
+     private_key = "your_private_key"
+     client_email = "your_client_email"
+     client_id = "your_client_id"
+     auth_uri = "https://accounts.google.com/o/oauth2/auth"
+     token_uri = "https://oauth2.googleapis.com/token"
+     auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
+     client_x509_cert_url = "your_client_cert_url"
+     ```
 
 4. Run the application:
    ```bash
