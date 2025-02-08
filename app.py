@@ -418,7 +418,7 @@ if check_password():
                     # Add visualization selector
                     viz_type = st.selectbox(
                         "Select Visualization Type",
-                        ["Distribution", "Heatmap"],  # Added Heatmap option
+                        ["Distribution", "Heatmap", "Time Trends", "Network"],
                         key="skills_viz_selector_overview"
                     )
                     
@@ -500,6 +500,117 @@ if check_password():
                         # Add explanation
                         st.info("This heatmap shows how often different skills appear together in responses. " +
                                "Darker colors indicate skills that are more frequently found together.")
+                    elif viz_type == "Time Trends":
+                        st.subheader("Skills Adoption Over Time")
+                        
+                        # Create time series data
+                        time_data = []
+                        for _, row in filtered_df.iterrows():
+                            date = pd.to_datetime(row.get('submittedAt'))
+                            skills = row.get('skills', {}).get('technical', [])
+                            if isinstance(skills, list):
+                                for skill in skills:
+                                    time_data.append({
+                                        'Date': date,
+                                        'Skill': skill
+                                    })
+                        
+                        if time_data:
+                            time_df = pd.DataFrame(time_data)
+                            time_df = time_df.sort_values('Date')
+                            
+                            # Cumulative adoption chart
+                            fig = px.line(
+                                time_df.groupby(['Date', 'Skill']).size().unstack().cumsum(),
+                                title="Skill Adoption Trends",
+                                labels={'value': 'Number of Users', 'variable': 'Skill'}
+                            )
+                            st.plotly_chart(fig, use_container_width=True, key="skills_trends_overview")
+                            
+                            # Monthly adoption rate
+                            monthly_adoption = time_df.groupby([pd.Grouper(key='Date', freq='M'), 'Skill']).size().unstack()
+                            fig2 = px.bar(
+                                monthly_adoption,
+                                title="Monthly Skill Adoption Rate",
+                                labels={'value': 'New Users', 'variable': 'Skill'}
+                            )
+                            st.plotly_chart(fig2, use_container_width=True, key="skills_monthly_overview")
+                            
+                            st.info("These charts show how skill adoption has grown over time and the monthly adoption rate.")
+                    elif viz_type == "Network":
+                        st.subheader("Skills Relationship Network")
+                        
+                        # Create skill pairs for network
+                        skill_pairs = []
+                        pair_weights = {}
+                        for _, row in filtered_df.iterrows():
+                            skills = row.get('skills', {}).get('technical', [])
+                            if isinstance(skills, list) and len(skills) > 1:
+                                for i in range(len(skills)):
+                                    for j in range(i+1, len(skills)):
+                                        pair = tuple(sorted([skills[i], skills[j]]))
+                                        skill_pairs.append(pair)
+                                        pair_weights[pair] = pair_weights.get(pair, 0) + 1
+                        
+                        if skill_pairs:
+                            # Create network data
+                            nodes = list(set([skill for pair in skill_pairs for skill in pair]))
+                            edges = list(pair_weights.items())
+                            
+                            # Create network visualization
+                            edge_x = []
+                            edge_y = []
+                            for edge, weight in edges:
+                                x0, y0 = nodes.index(edge[0]) * 2, nodes.index(edge[0]) * 2
+                                x1, y1 = nodes.index(edge[1]) * 2, nodes.index(edge[1]) * 2
+                                edge_x.extend([x0, x1, None])
+                                edge_y.extend([y0, y1, None])
+                            
+                            node_x = [i * 2 for i in range(len(nodes))]
+                            node_y = [i * 2 for i in range(len(nodes))]
+                            
+                            # Create the network plot
+                            fig = go.Figure()
+                            
+                            # Add edges
+                            fig.add_trace(go.Scatter(
+                                x=edge_x, y=edge_y,
+                                line=dict(width=0.5, color='#888'),
+                                hoverinfo='none',
+                                mode='lines'
+                            ))
+                            
+                            # Add nodes
+                            fig.add_trace(go.Scatter(
+                                x=node_x, y=node_y,
+                                mode='markers+text',
+                                hoverinfo='text',
+                                text=nodes,
+                                textposition="top center",
+                                marker=dict(
+                                    size=20,
+                                    color='#2ecc71',
+                                    line_width=2
+                                )
+                            ))
+                            
+                            fig.update_layout(
+                                title="Skills Relationship Network",
+                                showlegend=False,
+                                hovermode='closest',
+                                margin=dict(b=20,l=5,r=5,t=40)
+                            )
+                            
+                            st.plotly_chart(fig, use_container_width=True, key="skills_network_overview")
+                            
+                            # Show top relationships
+                            st.subheader("Top Skill Relationships")
+                            top_pairs = sorted(pair_weights.items(), key=lambda x: x[1], reverse=True)[:5]
+                            for pair, weight in top_pairs:
+                                st.write(f"- {pair[0]} + {pair[1]}: {weight} occurrences")
+                            
+                            st.info("The network graph shows how different skills are related. " +
+                                   "Connected skills frequently appear together in responses.")
                     else:
                         st.info("No technical skills found in the data")
             except Exception as e:
