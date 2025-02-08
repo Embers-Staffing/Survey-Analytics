@@ -155,22 +155,34 @@ if check_password():
             st.metric("Total Responses", len(df))
         with col2:
             try:
-                years_mean = round(df['personal_yearsInConstruction'].astype(float).mean(), 1)
+                # Access nested personalInfo structure
+                years = [float(row.get('personalInfo', {}).get('yearsInConstruction', 0)) 
+                        for row in df.to_dict('records')]
+                years_mean = round(sum(years) / len(years), 1)
                 st.metric("Average Years in Construction", years_mean)
             except:
                 st.metric("Average Years in Construction", "N/A")
         with col3:
             try:
-                role = df['skills_experience_role'].mode()[0] if not df['skills_experience_role'].empty else "N/A"
-                st.metric("Most Common Role", role)
+                # Access nested skills structure
+                roles = [row.get('skills', {}).get('experience', {}).get('role', 'Unknown') 
+                        for row in df.to_dict('records')]
+                most_common = max(set(roles), key=roles.count)
+                st.metric("Most Common Role", most_common)
             except:
                 st.metric("Most Common Role", "N/A")
 
         # Basic visualizations (using seaborn)
         try:
             st.subheader("Years in Construction Distribution")
+            years_data = pd.DataFrame([{
+                'Years': float(row.get('personalInfo', {}).get('yearsInConstruction', 0))
+            } for row in df.to_dict('records')])
+            
             fig, ax = plt.subplots(figsize=(10, 6))
-            sns.histplot(data=df, x='personal_yearsInConstruction', bins=20, ax=ax)
+            sns.histplot(data=years_data, x='Years', bins=20, ax=ax)
+            plt.title('Years in Construction Distribution')
+            plt.xlabel('Years')
             st.pyplot(fig)
         except:
             st.write("No construction years data available")
@@ -181,21 +193,31 @@ if check_password():
         
         with col1:
             try:
-                # Convert list column to individual rows
+                # Extract career goals from nested structure
                 goals_list = []
-                for idx, row in df.iterrows():
-                    if isinstance(row.get('careerGoals'), list):
-                        goals_list.extend(row['careerGoals'])
-                career_goals = pd.DataFrame(goals_list, columns=['goal'])
-                fig = px.pie(career_goals, names='goal', title='Career Goals Distribution',
-                            color_discrete_sequence=px.colors.qualitative.Set3)
-                st.plotly_chart(fig, use_container_width=True)
+                for row in df.to_dict('records'):
+                    goals = row.get('goals', {}).get('careerGoals', [])
+                    if isinstance(goals, list):
+                        goals_list.extend(goals)
+                
+                if goals_list:
+                    career_goals = pd.DataFrame(goals_list, columns=['goal'])
+                    fig = px.pie(career_goals, names='goal', title='Career Goals Distribution',
+                                color_discrete_sequence=px.colors.qualitative.Set3)
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.write("No career goals data available")
             except Exception as e:
                 st.write("No career goals data available")
         
         with col2:
             try:
-                fig = px.pie(df, names='advancementPreference', title='Advancement Preferences',
+                # Extract advancement preferences from nested structure
+                prefs = [row.get('goals', {}).get('advancementPreference', 'Unknown') 
+                        for row in df.to_dict('records')]
+                pref_df = pd.DataFrame(prefs, columns=['preference'])
+                
+                fig = px.pie(pref_df, names='preference', title='Advancement Preferences',
                             color_discrete_sequence=px.colors.qualitative.Set3)
                 st.plotly_chart(fig, use_container_width=True)
             except:
