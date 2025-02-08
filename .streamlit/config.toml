@@ -1,12 +1,16 @@
 [theme]
-# Light mode
-primaryColor="#2E5077"
-backgroundColor="#FFFFFF"
-secondaryBackgroundColor="#F0F2F6"
-textColor="#262730"
+# Light theme settings
+primaryColor = "#2E5077"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
 
 # Dark mode settings
 base="dark"
 
+[browser]
+gatherUsageStats = false
+
 [server]
-enableCORS = false 
+enableCORS = false
+enableXsrfProtection = true 

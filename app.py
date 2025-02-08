@@ -44,35 +44,28 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Add this near the top of your app, after the imports
-if 'theme' not in st.session_state:
-    st.session_state.theme = 'light'
-
-# Add theme switcher in sidebar
+# Add theme selector to sidebar
 with st.sidebar:
-    theme = st.radio(
-        "Choose Theme",
+    # Use Streamlit's native theme
+    theme = st.selectbox(
+        "Theme",
         options=["Light", "Dark"],
-        horizontal=True,
-        key="theme_radio"
+        key="theme_select"
     )
-    st.session_state.theme = theme.lower()
 
-# Update the CSS variables based on theme
-st.markdown(f"""
-<style>
-    :root {{
-        --primary-color: {("#2E5077" if st.session_state.theme == 'light' else "#4A90E2")};
-        --background-color: {("#FFFFFF" if st.session_state.theme == 'light' else "#1E1E1E")};
-        --secondary-bg: {("#F8F9FA" if st.session_state.theme == 'light' else "#2D2D2D")};
-        --text-color: {("#1E1E1E" if st.session_state.theme == 'light' else "#E0E0E0")};
-        --border-color: {("#E9ECEF" if st.session_state.theme == 'light' else "#404040")};
-        --shadow: {("0 2px 4px rgba(0,0,0,0.05)" if st.session_state.theme == 'light' else "0 2px 4px rgba(0,0,0,0.2)")};
-        --radius: 8px;
-        --spacing: 1rem;
-    }}
-</style>
-""", unsafe_allow_html=True)
+    # Apply theme
+    if theme == "Dark":
+        st.markdown("""
+            <style>
+                /* Dark theme overrides */
+                [data-testid="stSidebar"] {
+                    background-color: #262730;
+                }
+                .stApp {
+                    background-color: #0E1117;
+                }
+            </style>
+        """, unsafe_allow_html=True)
 
 # Add section headers with icons and descriptions
 def section_header(icon, title, description):
