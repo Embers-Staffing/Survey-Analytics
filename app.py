@@ -158,12 +158,14 @@ if check_password():
         with col2:
             try:
                 years_list = []
-                for row in df.to_dict('records'):
-                    year_str = str(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
-                    # Remove any non-numeric characters
-                    year_str = ''.join(c for c in year_str if c.isdigit())
-                    if year_str:
-                        years_list.append(float(year_str))
+                for _, row in df.iterrows():
+                    personal_info = row['personalInfo']
+                    if isinstance(personal_info, dict):
+                        year_str = str(personal_info.get('yearsInConstruction', '0'))
+                        # Remove any non-numeric characters
+                        year_str = ''.join(c for c in year_str if c.isdigit())
+                        if year_str:
+                            years_list.append(float(year_str))
                 
                 if years_list:
                     years_mean = round(sum(years_list) / len(years_list), 1)
@@ -177,12 +179,12 @@ if check_password():
         with col3:
             try:
                 roles = []
-                for row in df.to_dict('records'):
-                    experience = row.get('skills', {}).get('experience', {})
-                    if isinstance(experience, dict):
-                        role = experience.get('role')
-                        if role:
-                            roles.append(role)
+                for _, row in df.iterrows():
+                    skills = row['skills']
+                    if isinstance(skills, dict) and 'experience' in skills:
+                        experience = skills['experience']
+                        if isinstance(experience, dict) and 'role' in experience:
+                            roles.append(experience['role'])
                 
                 if roles:
                     role_counts = {}
@@ -196,56 +198,51 @@ if check_password():
                 st.metric("Most Common Role", "N/A")
                 st.write(f"Error calculating roles: {str(e)}")
 
-        # Basic visualizations (using seaborn)
-        try:
-            st.subheader("Years in Construction Distribution")
-            years_data = pd.DataFrame([{
-                'Years': float(row.get('personalInfo', {}).get('yearsInConstruction', 0))
-            } for row in df.to_dict('records')])
-            
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.histplot(data=years_data, x='Years', bins=20, ax=ax)
-            plt.title('Years in Construction Distribution')
-            plt.xlabel('Years')
-            st.pyplot(fig)
-        except:
-            st.write("No construction years data available")
-
-        # Career Goals Analysis with enhanced styling
+        # Career Development section
         st.header("Career Development")
         col1, col2 = st.columns(2)
         
         with col1:
             try:
-                # Extract career goals from nested structure
                 goals_list = []
-                for row in df.to_dict('records'):
-                    goals = row.get('goals', {}).get('careerGoals', [])
-                    if isinstance(goals, list):
-                        goals_list.extend(goals)
+                for _, row in df.iterrows():
+                    goals = row['goals']
+                    if isinstance(goals, dict) and 'careerGoals' in goals:
+                        career_goals = goals['careerGoals']
+                        if isinstance(career_goals, list):
+                            goals_list.extend(career_goals)
                 
                 if goals_list:
-                    career_goals = pd.DataFrame(goals_list, columns=['goal'])
-                    fig = px.pie(career_goals, names='goal', title='Career Goals Distribution',
-                                color_discrete_sequence=px.colors.qualitative.Set3)
+                    career_goals_df = pd.DataFrame(goals_list, columns=['goal'])
+                    fig = px.pie(career_goals_df, names='goal', 
+                               title='Career Goals Distribution',
+                               color_discrete_sequence=px.colors.qualitative.Set3)
                     st.plotly_chart(fig, use_container_width=True)
                 else:
                     st.write("No career goals data available")
             except Exception as e:
                 st.write("No career goals data available")
+                st.write(f"Error: {str(e)}")
         
         with col2:
             try:
-                # Extract advancement preferences from nested structure
-                prefs = [row.get('goals', {}).get('advancementPreference', 'Unknown') 
-                        for row in df.to_dict('records')]
-                pref_df = pd.DataFrame(prefs, columns=['preference'])
+                prefs = []
+                for _, row in df.iterrows():
+                    goals = row['goals']
+                    if isinstance(goals, dict) and 'advancementPreference' in goals:
+                        prefs.append(goals['advancementPreference'])
                 
-                fig = px.pie(pref_df, names='preference', title='Advancement Preferences',
-                            color_discrete_sequence=px.colors.qualitative.Set3)
-                st.plotly_chart(fig, use_container_width=True)
-            except:
+                if prefs:
+                    pref_df = pd.DataFrame(prefs, columns=['preference'])
+                    fig = px.pie(pref_df, names='preference',
+                               title='Advancement Preferences',
+                               color_discrete_sequence=px.colors.qualitative.Set3)
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.write("No advancement preference data available")
+            except Exception as e:
                 st.write("No advancement preference data available")
+                st.write(f"Error: {str(e)}")
 
     with tab2:
         st.header("Advanced Analytics")
