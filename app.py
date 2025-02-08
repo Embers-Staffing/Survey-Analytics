@@ -144,21 +144,26 @@ def create_sidebar_filters(df):
             min_value=min_date,
             max_value=max_date
         )
+    else:
+        date_range = None
     
     # Role Filter
     roles = set()
     for _, row in df.iterrows():
-        role = row.get('skills', {}).get('experience', {}).get('role')
-        if role:
-            roles.add(role)
-    selected_roles = st.sidebar.multiselect("Roles", list(roles))
+        if isinstance(row.get('skills'), dict):
+            experience = row['skills'].get('experience', {})
+            if isinstance(experience, dict):
+                role = experience.get('role')
+                if role:
+                    roles.add(role)
+    selected_roles = st.sidebar.multiselect("Roles", list(roles) if roles else [])
     
     # Experience Level Filter
     years_ranges = ["0-2 years", "3-5 years", "5-10 years", "10+ years"]
     selected_exp = st.sidebar.multiselect("Experience Level", years_ranges)
     
     return {
-        'date_range': date_range if 'submittedAt' in df.columns else None,
+        'date_range': date_range,
         'roles': selected_roles,
         'experience': selected_exp
     }
@@ -167,14 +172,16 @@ def apply_filters(df, filters):
     """Apply selected filters to the dataframe."""
     filtered_df = df.copy()
     
-    if filters['date_range']:
+    if filters.get('date_range'):
         mask = (pd.to_datetime(filtered_df['submittedAt']).dt.date >= filters['date_range'][0]) & \
                (pd.to_datetime(filtered_df['submittedAt']).dt.date <= filters['date_range'][1])
         filtered_df = filtered_df[mask]
     
-    if filters['roles']:
+    if filters.get('roles'):
         filtered_df = filtered_df[filtered_df.apply(
-            lambda x: x.get('skills', {}).get('experience', {}).get('role') in filters['roles'],
+            lambda x: isinstance(x.get('skills'), dict) and 
+                     isinstance(x['skills'].get('experience'), dict) and 
+                     x['skills']['experience'].get('role') in filters['roles'],
             axis=1
         )]
     
