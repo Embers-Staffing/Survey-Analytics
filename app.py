@@ -199,24 +199,24 @@ def create_sidebar_filters(df: pd.DataFrame) -> dict:
     if 'submittedAt' in df.columns:
         try:
             # Convert to datetime with error handling
-            dates = pd.to_datetime(df['submittedAt'], format='ISO8601', errors='coerce')
+            dates = pd.to_datetime(df['submittedAt'], errors='coerce', utc=True)
             valid_dates = dates.dropna()
             
             if not valid_dates.empty:
-                min_date = valid_dates.min()
-                max_date = valid_dates.max()
+                min_date = valid_dates.min().date()
+                max_date = valid_dates.max().date()
                 date_range = st.sidebar.date_input(
                     "Date Range",
-                    value=(min_date.date(), max_date.date()),
-                    min_value=min_date.date(),
-                    max_value=max_date.date()
+                    value=(min_date, max_date),
+                    min_value=min_date,
+                    max_value=max_date
                 )
             else:
                 date_range = None
                 st.sidebar.warning("No valid dates found in the data")
         except Exception as e:
+            st.sidebar.error(f"Error processing dates: {str(e)}")
             date_range = None
-            st.sidebar.warning("Error processing dates")
     else:
         date_range = None
     
@@ -246,9 +246,13 @@ def apply_filters(df, filters):
     filtered_df = df.copy()
     
     if filters.get('date_range'):
-        mask = (pd.to_datetime(filtered_df['submittedAt']).dt.date >= filters['date_range'][0]) & \
-               (pd.to_datetime(filtered_df['submittedAt']).dt.date <= filters['date_range'][1])
-        filtered_df = filtered_df[mask]
+        try:
+            dates = pd.to_datetime(filtered_df['submittedAt'], errors='coerce', utc=True)
+            mask = (dates.dt.date >= filters['date_range'][0]) & \
+                   (dates.dt.date <= filters['date_range'][1])
+            filtered_df = filtered_df[mask]
+        except Exception as e:
+            st.warning(f"Error applying date filter: {str(e)}")
     
     if filters.get('roles'):
         filtered_df = filtered_df[filtered_df.apply(
