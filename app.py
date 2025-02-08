@@ -488,12 +488,24 @@ if check_password():
             # Correlation Analysis
             st.subheader("Correlation Analysis")
             corr = regression_df.corr()
+            
+            # Create heatmap using px.imshow
             fig = px.imshow(
-                corr,
-                text=corr.round(2),
-                aspect='auto',
+                corr.values,
+                x=corr.columns,
+                y=corr.columns,
+                color_continuous_scale='RdBu_r',
                 title='Correlation Matrix'
             )
+            
+            # Update layout for better readability
+            fig.update_traces(text=corr.values.round(2), texttemplate='%{text}')
+            fig.update_layout(
+                xaxis_title='',
+                yaxis_title='',
+                xaxis={'side': 'bottom'}
+            )
+            
             st.plotly_chart(fig, use_container_width=True)
             
             # Scatter Plots with Trend Lines
