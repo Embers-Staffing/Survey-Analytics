@@ -207,33 +207,69 @@ if check_password():
         # Personality Clustering
         st.subheader("Personality Clusters")
         try:
-            # First, let's see what data we have
-            st.write("Raw data sample:", df.iloc[0].to_dict())
+            # Create features for clustering
+            features_data = []
+            for _, row in df.iterrows():
+                # Get years in construction
+                years = float(row.get('personalInfo', {}).get('yearsInConstruction', 0))
+                
+                # Get role
+                role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                
+                # Get personality type
+                mbti = row.get('personalityTraits', {}).get('myersBriggs', {})
+                personality_type = (
+                    mbti.get('attention', [''])[0] + 
+                    mbti.get('information', [''])[0] + 
+                    mbti.get('decisions', [''])[0] + 
+                    mbti.get('lifestyle', [''])[0]
+                )
+                
+                features_data.append({
+                    'years': years,
+                    'role': role,
+                    'personality': personality_type
+                })
             
-            # Create simpler features for clustering
-            years = pd.to_numeric(df['personalInfo'].apply(lambda x: x.get('yearsInConstruction', 0)), errors='coerce')
-            roles = df['skills'].apply(lambda x: x.get('experience', {}).get('role', 'Unknown'))
+            # Create DataFrame for clustering
+            features_df = pd.DataFrame(features_data)
             
-            # Create feature matrix
-            features = pd.DataFrame({
-                'years': years,
-                'role': pd.Categorical(roles).codes
-            })
+            # Encode categorical variables
+            features_df['role_code'] = pd.Categorical(features_df['role']).codes
+            features_df['personality_code'] = pd.Categorical(features_df['personality']).codes
+            
+            # Create feature matrix for clustering
+            X = features_df[['years', 'role_code', 'personality_code']].values
             
             # Perform clustering
             kmeans = KMeans(n_clusters=3, random_state=42)
-            clusters = kmeans.fit_predict(features)
-            df['Cluster'] = clusters
+            clusters = kmeans.fit_predict(X)
             
             # Create visualization
-            fig = px.scatter(
-                x=years,
-                y=roles,
+            fig = px.scatter_3d(
+                x=features_df['years'],
+                y=features_df['role'],
+                z=features_df['personality'],
                 color=clusters,
-                title='Experience Clusters',
-                labels={'x': 'Years in Construction', 'y': 'Role'}
+                title='Experience and Personality Clusters',
+                labels={
+                    'x': 'Years in Construction',
+                    'y': 'Role',
+                    'z': 'Personality Type'
+                }
             )
             st.plotly_chart(fig, use_container_width=True)
+            
+            # Show cluster summary
+            st.subheader("Cluster Summary")
+            for cluster in range(3):
+                cluster_data = features_df[clusters == cluster]
+                st.write(f"Cluster {cluster + 1}:")
+                st.write(f"- Average Years: {cluster_data['years'].mean():.1f}")
+                st.write(f"- Common Roles: {', '.join(cluster_data['role'].value_counts().head(2).index)}")
+                st.write(f"- Size: {len(cluster_data)} members")
+                st.write("---")
+                
         except Exception as e:
             st.error(f"Clustering error: {str(e)}")
             st.write("Unable to generate personality cluster visualization")
