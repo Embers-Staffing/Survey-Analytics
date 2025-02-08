@@ -1003,60 +1003,76 @@ if check_password():
                     X = regression_df[['Years', 'Project Size']].values
                     y = regression_df['Target Salary Level'].values
                     
-                    # Create mesh grid
-                    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-                    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-                    xx, yy = np.meshgrid(
-                        np.arange(x_min, x_max, 0.1),
-                        np.arange(y_min, y_max, 0.1)
-                    )
+                    # Dynamically set n_neighbors based on dataset size
+                    n_neighbors = min(5, len(X) - 1)  # Ensure n_neighbors is less than n_samples
                     
-                    # Fit a simple classifier
-                    clf = KNeighborsClassifier(n_neighbors=5)
-                    clf.fit(X, y)
-                    
-                    # Make predictions on mesh grid
-                    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
-                    Z = Z.reshape(xx.shape)
-                    
-                    # Create contour plot
-                    fig = go.Figure()
-                    
-                    # Add contour
-                    fig.add_trace(
-                        go.Contour(
-                            x=np.arange(x_min, x_max, 0.1),
-                            y=np.arange(y_min, y_max, 0.1),
-                            z=Z,
-                            colorscale='Viridis',
-                            showscale=True,
-                            name='Decision Boundary'
+                    if len(X) > n_neighbors:  # Only proceed if we have enough samples
+                        # Create mesh grid
+                        x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+                        y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+                        xx, yy = np.meshgrid(
+                            np.arange(x_min, x_max, 0.1),
+                            np.arange(y_min, y_max, 0.1)
                         )
-                    )
-                    
-                    # Add scatter points
-                    for salary_level in np.unique(y):
-                        mask = y == salary_level
+                        
+                        # Fit a simple classifier with dynamic n_neighbors
+                        clf = KNeighborsClassifier(n_neighbors=n_neighbors)
+                        clf.fit(X, y)
+                        
+                        # Make predictions on mesh grid
+                        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+                        Z = Z.reshape(xx.shape)
+                        
+                        # Create contour plot
+                        fig = go.Figure()
+                        
+                        # Add contour
                         fig.add_trace(
-                            go.Scatter(
-                                x=X[mask, 0],
-                                y=X[mask, 1],
-                                mode='markers',
-                                name=f'Salary Level {salary_level}',
-                                marker=dict(size=8)
+                            go.Contour(
+                                x=np.arange(x_min, x_max, 0.1),
+                                y=np.arange(y_min, y_max, 0.1),
+                                z=Z,
+                                colorscale='Viridis',
+                                showscale=True,
+                                name='Decision Boundary'
                             )
                         )
-                    
-                    # Update layout
-                    fig.update_layout(
-                        title='Decision Boundaries between Salary Levels',
-                        xaxis_title='Years of Experience',
-                        yaxis_title='Project Size',
-                        height=600,
-                        showlegend=True
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Add scatter points
+                        for salary_level in np.unique(y):
+                            mask = y == salary_level
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=X[mask, 0],
+                                    y=X[mask, 1],
+                                    mode='markers',
+                                    name=f'Salary Level {salary_level}',
+                                    marker=dict(size=8)
+                                )
+                            )
+                        
+                        # Update layout
+                        fig.update_layout(
+                            title='Decision Boundaries between Salary Levels',
+                            xaxis_title='Years of Experience',
+                            yaxis_title='Project Size',
+                            height=600,
+                            showlegend=True
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Add interpretation
+                        st.info(f"""
+                        This analysis uses {n_neighbors} nearest neighbors to classify salary levels based on:
+                        - Years of Experience
+                        - Project Size
+                        
+                        The colored regions show predicted salary levels for different combinations 
+                        of experience and project size.
+                        """)
+                    else:
+                        st.warning("Not enough data points for decision boundary analysis. Need at least 2 samples.")
                     
                     # Residual Plot Analysis
                     st.subheader("Regression Residual Analysis")
