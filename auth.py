@@ -8,7 +8,7 @@ def check_password():
         """Checks whether a password entered by the user is correct."""
         if hmac.compare_digest(st.session_state["password"], st.secrets["password"]):
             st.session_state["password_correct"] = True
-            del st.session_state["password"]  # Don't store the password
+            del st.session_state["password"]
         else:
             st.session_state["password_correct"] = False
             st.error("😕 Password incorrect")
@@ -17,97 +17,109 @@ def check_password():
         # First run, show input for password
         st.markdown("""
         <style>
+        /* Hide Streamlit elements */
+        #MainMenu, header, footer {display: none;}
+        .stDeployButton {display: none;}
+        .stTextInput > div > div > input {border: none !important;}
+        div[data-testid="stToolbar"] {display: none;}
+        div[data-testid="stDecoration"] {display: none;}
+        div[data-testid="stStatusWidget"] {display: none;}
+        
+        /* Main styles */
         .main-title {
-            font-size: 3em;
-            font-weight: 700;
+            font-size: 2.5em;
+            font-weight: 800;
             color: #1E67C7;
             text-align: center;
-            padding: 40px 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            margin: 2rem 0;
+            font-family: sans-serif;
         }
-        .password-container {
-            max-width: 500px;
-            margin: 40px auto;
-            padding: 40px;
-            background-color: white;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        
+        .login-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .password-title {
+        
+        .login-title {
             text-align: center;
-            color: #1E67C7;
-            margin-bottom: 30px;
-            font-size: 1.5em;
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 1.5rem;
         }
-        /* Hide default Streamlit container */
-        div[data-testid="stVerticalBlock"] {
-            gap: 0 !important;
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-        }
-        /* Style the text input */
-        .stTextInput input {
-            border: 1px solid #ddd;
-            padding: 12px;
+        
+        .custom-input {
+            background: #f5f5f5;
+            padding: 0.8rem;
             border-radius: 5px;
-            width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 1rem;
         }
-        .stTextInput input:focus {
-            border-color: #1E67C7;
-            box-shadow: 0 0 0 2px rgba(30, 103, 199, 0.2);
+        
+        .login-button {
+            background: #1E67C7;
+            color: white;
+            padding: 0.8rem;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
+        
+        .login-button:hover {
+            background: #1850a0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
         .footer {
             position: fixed;
             left: 0;
             bottom: 0;
             width: 100%;
-            background-color: #f8f9fa;
-            color: #6c757d;
             text-align: center;
-            padding: 20px;
-            font-size: 14px;
-            border-top: 1px solid #dee2e6;
+            padding: 1rem;
+            color: #666;
+            font-size: 0.9em;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
         }
-        .stButton button {
-            background-color: #1E67C7;
-            color: white;
-            font-weight: 600;
-            padding: 10px 20px;
-            border-radius: 5px;
-            border: none;
-            transition: all 0.3s ease;
+        
+        a {
+            color: #1E67C7;
+            text-decoration: none;
         }
-        .stButton button:hover {
-            background-color: #1850a0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        
+        a:hover {
+            text-decoration: underline;
         }
         </style>
         """, unsafe_allow_html=True)
         
-        # Main title
+        # Main content
         st.markdown('<h1 class="main-title">Construction Career Survey Dashboard</h1>', unsafe_allow_html=True)
         
-        # Login container
-        with st.container():
-            st.markdown('<div class="password-container">', unsafe_allow_html=True)
-            st.markdown('<h2 class="password-title">🔒 Password Protected</h2>', unsafe_allow_html=True)
-            st.text_input(
-                "Please enter the password to access the dashboard",
-                type="password",
-                key="password",
-                placeholder="Enter password"
-            )
+        st.markdown("""
+        <div class="login-container">
+            <div class="login-title">🔒 Enter Dashboard Password</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Password input and button
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            st.text_input("", type="password", key="password", placeholder="Enter password")
             st.button("Login", on_click=password_entered, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-            
+        
         # Footer
         st.markdown("""
         <div class="footer">
-            <p>© Embers Staffing 2025 | Built by <a href="https://github.com/ArsCodeAmatoria" target="_blank">ArsCodeAmatoria</a></p>
+            © Embers Staffing 2025 | Built by <a href="https://github.com/ArsCodeAmatoria" target="_blank">ArsCodeAmatoria</a>
         </div>
         """, unsafe_allow_html=True)
+        
         return False
     
     return st.session_state["password_correct"] 
