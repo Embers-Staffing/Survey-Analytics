@@ -1215,8 +1215,8 @@ if check_password():
                             margin=dict(t=50, l=25, r=25, b=25)
                         )
                         
-                        # Add unique key for Alluvial diagram
-                        st.plotly_chart(fig_alluvial, use_container_width=True, key="career_flow_sankey")
+                        # Add unique key for Alluvial diagram in Analytics tab
+                        st.plotly_chart(fig_alluvial, use_container_width=True, key="analytics_career_flow_sankey")
                         
                         # Add explanation for Alluvial
                         st.info("""
@@ -1284,8 +1284,8 @@ if check_password():
                             )
                         )
                         
-                        # Add unique key for line graph
-                        st.plotly_chart(fig, use_container_width=True, key="career_trends_line")
+                        # Add unique key for line graph in Analytics tab
+                        st.plotly_chart(fig, use_container_width=True, key="analytics_career_trends_line")
                         
                         # Add trend analysis
                         st.info("""
