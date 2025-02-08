@@ -34,7 +34,7 @@ st.set_page_config(
 
 # Check password
 if check_password():
-    # Main dashboard code
+    # Main dashboard code is only shown after correct password
     st.title("Survey Response Dashboard")
     
     # Fetch data from Firebase
