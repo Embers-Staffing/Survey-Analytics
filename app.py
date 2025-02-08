@@ -1157,8 +1157,11 @@ if check_password():
                         - Hover over points to see detailed information
                         - Compare trends between different roles
                         """)
-                    
-                    # Continue with existing analysis...
+                    else:
+                        st.warning("No time series data available")
+                except Exception as e:
+                    st.error(f"Error analyzing career progression: {str(e)}")
+                    st.write("Unable to generate career progression visualization")
 
         else:  # Skills Analysis
             with st.container():
