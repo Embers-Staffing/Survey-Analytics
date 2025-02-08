@@ -1018,6 +1018,61 @@ if check_password():
                     stats_df = regression_df.describe().round(2)
                     st.dataframe(stats_df)
                     
+                    # Feature Importance Analysis
+                    st.subheader("Feature Importance Analysis")
+                    
+                    # Calculate feature importance using correlation with target salary
+                    importance_scores = {}
+                    target = regression_df['Target Salary Level']
+                    
+                    for feature in ['Years', 'Project Size']:
+                        correlation = abs(regression_df[feature].corr(target))
+                        importance_scores[feature] = correlation
+                    
+                    # Create feature importance bar chart
+                    importance_df = pd.DataFrame({
+                        'Feature': list(importance_scores.keys()),
+                        'Importance': list(importance_scores.values())
+                    }).sort_values('Importance', ascending=True)
+                    
+                    fig = px.bar(
+                        importance_df,
+                        x='Importance',
+                        y='Feature',
+                        orientation='h',
+                        title='Feature Importance (Correlation with Target Salary)',
+                        color='Importance',
+                        color_continuous_scale='Viridis'
+                    )
+                    
+                    fig.update_layout(
+                        xaxis_title='Absolute Correlation',
+                        yaxis_title='Feature',
+                        showlegend=False,
+                        height=400
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Add interpretation
+                    st.info("""
+                    This chart shows how strongly each feature correlates with target salary level:
+                    - Higher values indicate stronger relationships
+                    - Features are ranked by their absolute correlation with target salary
+                    - This helps identify which factors most influence salary expectations
+                    """)
+                    
+                    # Add detailed statistics
+                    st.subheader("Feature Impact Details")
+                    for feature, importance in importance_scores.items():
+                        st.write(f"**{feature}**")
+                        st.write(f"- Correlation with Target Salary: {importance:.3f}")
+                        avg_by_level = regression_df.groupby('Target Salary Level')[feature].mean()
+                        st.write("- Average by Salary Level:")
+                        for level, avg in avg_by_level.items():
+                            st.write(f"  • Level {level}: {avg:.1f}")
+                        st.write("")
+                    
                 except Exception as e:
                     st.error(f"Regression analysis error: {str(e)}")
                     st.write("Unable to perform regression analysis")
