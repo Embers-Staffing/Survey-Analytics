@@ -1090,373 +1090,75 @@ if check_password():
             with st.container():
                 st.subheader("Career Progression Analysis")
                 try:
-                    # Prepare data for regression
-                    regression_data = []
+                    # Time Series Analysis
+                    st.subheader("Career Progression Over Time")
+                    
+                    # Prepare time series data
+                    time_data = []
                     for _, row in filtered_df.iterrows():
                         try:
+                            submission_date = pd.to_datetime(row['submittedAt'])
                             years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
-                            salary_level = {
-                                'entry': 1,
-                                'mid': 2,
-                                'senior': 3,
-                                'executive': 4
-                            }.get(row.get('goals', {}).get('targetSalary', 'entry'), 1)
+                            role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                            salary_level = row.get('goals', {}).get('targetSalary', 'entry')
                             
-                            project_size_map = {
-                                'small': 1,
-                                'medium': 2,
-                                'large': 3
-                            }
-                            project_size = project_size_map.get(
-                                row.get('skills', {}).get('experience', {}).get('projectSize', 'small'),
-                                1
-                            )
-                            
-                            regression_data.append({
+                            time_data.append({
+                                'Date': submission_date,
                                 'Years': years,
-                                'Project Size': project_size,
-                                'Target Salary Level': salary_level
+                                'Role': role.replace('-', ' ').title(),
+                                'Salary Level': salary_level.title()
                             })
                         except:
                             continue
                     
-                    regression_df = pd.DataFrame(regression_data)
-                    
-                    # Correlation Analysis
-                    st.subheader("Correlation Analysis")
-                    corr = regression_df.corr()
-                    
-                    # Create heatmap using px.imshow
-                    fig = px.imshow(
-                        corr.values,
-                        x=corr.columns,
-                        y=corr.columns,
-                        color_continuous_scale='RdBu_r',
-                        title='Correlation Matrix'
-                    )
-                    
-                    # Update layout for better readability
-                    fig.update_traces(text=corr.values.round(2), texttemplate='%{text}')
-                    fig.update_layout(
-                        xaxis_title='',
-                        yaxis_title='',
-                        xaxis={'side': 'bottom'}
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # PCA Analysis
-                    st.subheader("PCA Analysis")
-                    
-                    # Prepare data for PCA
-                    from sklearn.preprocessing import StandardScaler
-                    from sklearn.decomposition import PCA
-                    
-                    # Define features for PCA
-                    X = regression_df[['Years', 'Project Size']].values  # Define X here
-                    y = regression_df['Target Salary Level'].values
-                    
-                    # Standardize features
-                    scaler = StandardScaler()
-                    X_scaled = scaler.fit_transform(X)
-                    
-                    # Perform PCA
-                    pca = PCA()
-                    X_pca = pca.fit_transform(X_scaled)
-                    
-                    # Calculate explained variance ratio
-                    explained_variance = pca.explained_variance_ratio_
-                    cumulative_variance = np.cumsum(explained_variance)
-                    
-                    # Create subplot figure
-                    fig = make_subplots(
-                        rows=1, cols=2,
-                        subplot_titles=(
-                            'Explained Variance Ratio',
-                            'Cumulative Explained Variance'
-                        )
-                    )
-                    
-                    # Add bar plot for explained variance
-                    fig.add_trace(
-                        go.Bar(
-                            x=[f'PC{i+1}' for i in range(len(explained_variance))],
-                            y=explained_variance,
-                            name='Explained Variance',
-                            marker_color='rgb(55, 83, 109)'
-                        ),
-                        row=1, col=1
-                    )
-                    
-                    # Add line plot for cumulative variance
-                    fig.add_trace(
-                        go.Scatter(
-                            x=[f'PC{i+1}' for i in range(len(cumulative_variance))],
-                            y=cumulative_variance,
-                            name='Cumulative Variance',
-                            mode='lines+markers',
-                            marker=dict(color='rgb(26, 118, 255)')
-                        ),
-                        row=1, col=2
-                    )
-                    
-                    # Update layout
-                    fig.update_layout(
-                        height=400,
-                        showlegend=True,
-                        title_text="PCA Explained Variance Analysis"
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Add feature importance based on PCA
-                    st.subheader("Feature Importance from PCA")
-                    
-                    # Calculate feature importance
-                    feature_importance = np.abs(pca.components_[0])
-                    feature_names = ['Years', 'Project Size']
-                    
-                    # Create feature importance DataFrame
-                    importance_df = pd.DataFrame({
-                        'Feature': feature_names,
-                        'Importance': feature_importance
-                    }).sort_values('Importance', ascending=True)
-                    
-                    # Create horizontal bar chart
-                    fig = px.bar(
-                        importance_df,
-                        x='Importance',
-                        y='Feature',
-                        orientation='h',
-                        title='Feature Importance from First Principal Component',
-                        color='Importance',
-                        color_continuous_scale='Viridis'
-                    )
-                    
-                    fig.update_layout(
-                        xaxis_title='Absolute Coefficient Value',
-                        yaxis_title='Feature',
-                        height=300
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Add interpretation
-                    st.info("""
-                    PCA Analysis Interpretation:
-                    - Bars show how much variance each principal component explains
-                    - Line shows cumulative explained variance
-                    - Higher importance values indicate more influential features
-                    - First principal component shows the most important patterns in the data
-                    """)
-                    
-                    # Decision Boundary Plot
-                    st.subheader("Decision Boundary Analysis")
-                    
-                    # Prepare data for decision boundary plot
-                    X = regression_df[['Years', 'Project Size']].values
-                    y = regression_df['Target Salary Level'].values
-                    
-                    # Dynamically set n_neighbors based on dataset size
-                    n_neighbors = min(5, len(X) - 1)  # Ensure n_neighbors is less than n_samples
-                    
-                    if len(X) > n_neighbors:  # Only proceed if we have enough samples
-                        # Create mesh grid
-                        x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
-                        y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
-                        xx, yy = np.meshgrid(
-                            np.arange(x_min, x_max, 0.1),
-                            np.arange(y_min, y_max, 0.1)
-                        )
+                    if time_data:
+                        time_df = pd.DataFrame(time_data)
+                        time_df = time_df.sort_values('Date')
                         
-                        # Fit a simple classifier with dynamic n_neighbors
-                        clf = KNeighborsClassifier(n_neighbors=n_neighbors)
-                        clf.fit(X, y)
-                        
-                        # Make predictions on mesh grid
-                        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
-                        Z = Z.reshape(xx.shape)
-                        
-                        # Create contour plot
+                        # Create line graph
                         fig = go.Figure()
                         
-                        # Add contour
-                        fig.add_trace(
-                            go.Contour(
-                                x=np.arange(x_min, x_max, 0.1),
-                                y=np.arange(y_min, y_max, 0.1),
-                                z=Z,
-                                colorscale='Viridis',
-                                showscale=True,
-                                name='Decision Boundary'
-                            )
-                        )
-                        
-                        # Add scatter points
-                        for salary_level in np.unique(y):
-                            mask = y == salary_level
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=X[mask, 0],
-                                    y=X[mask, 1],
-                                    mode='markers',
-                                    name=f'Salary Level {salary_level}',
-                                    marker=dict(size=8)
-                                )
-                            )
+                        # Add lines for each role
+                        for role in time_df['Role'].unique():
+                            role_data = time_df[time_df['Role'] == role]
+                            fig.add_trace(go.Scatter(
+                                x=role_data['Date'],
+                                y=role_data['Years'],
+                                name=role,
+                                mode='lines+markers',
+                                hovertemplate="<b>%{x}</b><br>" +
+                                            "Role: " + role + "<br>" +
+                                            "Years: %{y:.1f}<br>"
+                            ))
                         
                         # Update layout
                         fig.update_layout(
-                            title='Decision Boundaries between Salary Levels',
-                            xaxis_title='Years of Experience',
-                            yaxis_title='Project Size',
-                            height=600,
-                            showlegend=True
+                            title="Experience Trends by Role",
+                            xaxis_title="Submission Date",
+                            yaxis_title="Years of Experience",
+                            hovermode='x unified',
+                            height=500,
+                            showlegend=True,
+                            legend=dict(
+                                yanchor="top",
+                                y=0.99,
+                                xanchor="left",
+                                x=0.01
+                            )
                         )
                         
                         st.plotly_chart(fig, use_container_width=True)
                         
-                        # Add interpretation
-                        st.info(f"""
-                        This analysis uses {n_neighbors} nearest neighbors to classify salary levels based on:
-                        - Years of Experience
-                        - Project Size
-                        
-                        The colored regions show predicted salary levels for different combinations 
-                        of experience and project size.
+                        # Add trend analysis
+                        st.info("""
+                        Trend Analysis:
+                        - Lines show experience progression for each role
+                        - Steeper slopes indicate faster experience growth
+                        - Hover over points to see detailed information
+                        - Compare trends between different roles
                         """)
-                    else:
-                        st.warning("Not enough data points for decision boundary analysis. Need at least 2 samples.")
                     
-                    # Residual Plot Analysis
-                    st.subheader("Regression Residual Analysis")
-                    
-                    # Fit a simple linear regression for salary prediction
-                    model = LinearRegression()
-                    model.fit(X, y)
-                    
-                    # Make predictions
-                    y_pred = model.predict(X)
-                    
-                    # Calculate residuals
-                    residuals = y - y_pred
-                    
-                    # Create residual plots
-                    fig = make_subplots(
-                        rows=2, cols=2,
-                        subplot_titles=(
-                            'Residuals vs Predicted',
-                            'Residuals vs Years',
-                            'Residuals Distribution',
-                            'Residuals vs Project Size'
-                        )
-                    )
-                    
-                    # Residuals vs Predicted
-                    fig.add_trace(
-                        go.Scatter(
-                            x=y_pred,
-                            y=residuals,
-                            mode='markers',
-                            name='Residuals',
-                            marker=dict(color='blue', size=8)
-                        ),
-                        row=1, col=1
-                    )
-                    
-                    # Residuals vs Years
-                    fig.add_trace(
-                        go.Scatter(
-                            x=X[:, 0],
-                            y=residuals,
-                            mode='markers',
-                            name='Residuals',
-                            marker=dict(color='green', size=8)
-                        ),
-                        row=1, col=2
-                    )
-                    
-                    # Residuals Distribution
-                    fig.add_trace(
-                        go.Histogram(
-                            x=residuals,
-                            name='Residuals',
-                            nbinsx=20,
-                            marker_color='red'
-                        ),
-                        row=2, col=1
-                    )
-                    
-                    # Residuals vs Project Size
-                    fig.add_trace(
-                        go.Scatter(
-                            x=X[:, 1],
-                            y=residuals,
-                            mode='markers',
-                            name='Residuals',
-                            marker=dict(color='purple', size=8)
-                        ),
-                        row=2, col=2
-                    )
-                    
-                    # Update layout
-                    fig.update_layout(
-                        height=800,
-                        title_text="Regression Residual Analysis",
-                        showlegend=False
-                    )
-                    
-                    # Update axes labels
-                    fig.update_xaxes(title_text="Predicted Values", row=1, col=1)
-                    fig.update_xaxes(title_text="Years", row=1, col=2)
-                    fig.update_xaxes(title_text="Residuals", row=2, col=1)
-                    fig.update_xaxes(title_text="Project Size", row=2, col=2)
-                    
-                    fig.update_yaxes(title_text="Residuals", row=1, col=1)
-                    fig.update_yaxes(title_text="Residuals", row=1, col=2)
-                    fig.update_yaxes(title_text="Count", row=2, col=1)
-                    fig.update_yaxes(title_text="Residuals", row=2, col=2)
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Add model metrics
-                    st.subheader("Regression Model Metrics")
-                    from sklearn.metrics import r2_score, mean_squared_error
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric(
-                            "R² Score",
-                            f"{r2_score(y, y_pred):.3f}"
-                        )
-                        st.metric(
-                            "RMSE",
-                            f"{np.sqrt(mean_squared_error(y, y_pred)):.3f}"
-                        )
-                    
-                    with col2:
-                        st.metric(
-                            "R² Score (Training)",
-                            f"{r2_score(y, y_pred):.3f}"
-                        )
-                        st.metric(
-                            "RMSE (Training)",
-                            f"{np.sqrt(mean_squared_error(y, y_pred)):.3f}"
-                        )
-                    
-                    # Add interpretation
-                    st.info("""
-                    Residual Plot Interpretation:
-                    - Random scatter around zero indicates a good fit
-                    - Patterns suggest model assumptions may be violated
-                    - Normal distribution of residuals is ideal
-                    - R² closer to 1 indicates better model fit
-                    - Lower RMSE indicates better prediction accuracy
-                    """)
-                    
-                except Exception as e:
-                    st.error(f"Regression analysis error: {str(e)}")
-                    st.write("Unable to perform regression analysis")
+                    # Continue with existing analysis...
 
         else:  # Skills Analysis
             with st.container():
