@@ -210,26 +210,34 @@ if check_password():
             # Create features for clustering
             features_data = []
             for _, row in df.iterrows():
-                # Get years in construction
-                years = float(row.get('personalInfo', {}).get('yearsInConstruction', 0))
-                
-                # Get role
-                role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
-                
-                # Get personality type
-                mbti = row.get('personalityTraits', {}).get('myersBriggs', {})
-                personality_type = (
-                    mbti.get('attention', [''])[0] + 
-                    mbti.get('information', [''])[0] + 
-                    mbti.get('decisions', [''])[0] + 
-                    mbti.get('lifestyle', [''])[0]
-                )
-                
-                features_data.append({
-                    'years': years,
-                    'role': role,
-                    'personality': personality_type
-                })
+                try:
+                    # Get years in construction (with error handling)
+                    years_str = row.get('personalInfo', {}).get('yearsInConstruction', '0')
+                    years = float(years_str) if years_str.isdigit() else 0.0
+                    
+                    # Get role
+                    role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                    
+                    # Get personality type
+                    mbti = row.get('personalityTraits', {}).get('myersBriggs', {})
+                    personality_type = (
+                        mbti.get('attention', [''])[0] + 
+                        mbti.get('information', [''])[0] + 
+                        mbti.get('decisions', [''])[0] + 
+                        mbti.get('lifestyle', [''])[0]
+                    )
+                    
+                    if years >= 0 and role and personality_type:
+                        features_data.append({
+                            'years': years,
+                            'role': role,
+                            'personality': personality_type
+                        })
+                except (ValueError, TypeError, AttributeError) as e:
+                    continue  # Skip this row if there's an error
+            
+            if not features_data:
+                raise ValueError("No valid data for clustering")
             
             # Create DataFrame for clustering
             features_df = pd.DataFrame(features_data)
@@ -241,21 +249,26 @@ if check_password():
             # Create feature matrix for clustering
             X = features_df[['years', 'role_code', 'personality_code']].values
             
+            # Normalize the features
+            X = (X - X.mean(axis=0)) / X.std(axis=0)
+            
             # Perform clustering
             kmeans = KMeans(n_clusters=3, random_state=42)
             clusters = kmeans.fit_predict(X)
+            features_df['Cluster'] = clusters
             
             # Create visualization
             fig = px.scatter_3d(
-                x=features_df['years'],
-                y=features_df['role'],
-                z=features_df['personality'],
-                color=clusters,
+                features_df,
+                x='years',
+                y='role',
+                z='personality',
+                color='Cluster',
                 title='Experience and Personality Clusters',
                 labels={
-                    'x': 'Years in Construction',
-                    'y': 'Role',
-                    'z': 'Personality Type'
+                    'years': 'Years in Construction',
+                    'role': 'Role',
+                    'personality': 'Personality Type'
                 }
             )
             st.plotly_chart(fig, use_container_width=True)
@@ -263,10 +276,11 @@ if check_password():
             # Show cluster summary
             st.subheader("Cluster Summary")
             for cluster in range(3):
-                cluster_data = features_df[clusters == cluster]
+                cluster_data = features_df[features_df['Cluster'] == cluster]
                 st.write(f"Cluster {cluster + 1}:")
                 st.write(f"- Average Years: {cluster_data['years'].mean():.1f}")
                 st.write(f"- Common Roles: {', '.join(cluster_data['role'].value_counts().head(2).index)}")
+                st.write(f"- Common Personality Types: {', '.join(cluster_data['personality'].value_counts().head(2).index)}")
                 st.write(f"- Size: {len(cluster_data)} members")
                 st.write("---")
                 
