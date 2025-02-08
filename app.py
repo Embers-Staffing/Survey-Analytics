@@ -800,253 +800,253 @@ if check_password():
                     # Check if we have enough data after filtering
                     if len(filtered_df) < 3:
                         st.warning("Not enough data for clustering. Please adjust your filters.")
-                        return
-                    
-                    # Create features for clustering
-                    features_data = []
-                    for _, row in filtered_df.iterrows():
-                        try:
-                            # Get years in construction with better error handling
-                            years_str = str(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
-                            years = float(''.join(c for c in years_str if c.isdigit()) or '0')
-                            
-                            # Get role and project size with defaults
-                            experience = row.get('skills', {}).get('experience', {})
-                            role = experience.get('role', 'Unknown')
-                            project_size = experience.get('projectSize', 'small')
-                            
-                            # Get personality traits with validation
-                            traits = row.get('personalityTraits', {})
-                            if not isinstance(traits, dict):
-                                continue
+                        st.empty()  # Use empty instead of return
+                    else:
+                        # Create features for clustering
+                        features_data = []
+                        for _, row in filtered_df.iterrows():
+                            try:
+                                # Get years in construction with better error handling
+                                years_str = str(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                                years = float(''.join(c for c in years_str if c.isdigit()) or '0')
                                 
-                            mbti = traits.get('myersBriggs', {})
-                            if not isinstance(mbti, dict):
-                                continue
+                                # Get role and project size with defaults
+                                experience = row.get('skills', {}).get('experience', {})
+                                role = experience.get('role', 'Unknown')
+                                project_size = experience.get('projectSize', 'small')
                                 
-                            # Only add if we have valid MBTI data
-                            if all(key in mbti for key in ['attention', 'information', 'decisions', 'lifestyle']):
-                                features_data.append({
-                                    'years': years,
-                                    'role': role,
-                                    'project_size': project_size,
-                                    'personality': ''.join([
-                                        mbti['attention'][0],
-                                        mbti['information'][0],
-                                        mbti['decisions'][0],
-                                        mbti['lifestyle'][0]
-                                    ])
-                                })
-                        except:
-                            continue
-                    
-                    if not features_data:
-                        st.warning("No valid personality data found for the selected filters.")
-                        return
+                                # Get personality traits with validation
+                                traits = row.get('personalityTraits', {})
+                                if not isinstance(traits, dict):
+                                    continue
+                                    
+                                mbti = traits.get('myersBriggs', {})
+                                if not isinstance(mbti, dict):
+                                    continue
+                                    
+                                # Only add if we have valid MBTI data
+                                if all(key in mbti for key in ['attention', 'information', 'decisions', 'lifestyle']):
+                                    features_data.append({
+                                        'years': years,
+                                        'role': role,
+                                        'project_size': project_size,
+                                        'personality': ''.join([
+                                            mbti['attention'][0],
+                                            mbti['information'][0],
+                                            mbti['decisions'][0],
+                                            mbti['lifestyle'][0]
+                                        ])
+                                    })
+                            except:
+                                continue
                         
-                    # Continue with clustering if we have valid data
-                    features_df = pd.DataFrame(features_data)
-                    
-                    # Encode categorical variables
-                    categorical_columns = ['role', 'project_size', 'personality']
-                    encoded_features = pd.get_dummies(features_df[categorical_columns])
-                    
-                    # Combine with numerical features
-                    X = pd.concat([features_df[['years']], encoded_features], axis=1)
-                    
-                    # Normalize features
-                    X = (X - X.mean()) / X.std()
-                    
-                    # Let user select number of clusters
-                    n_clusters = st.slider("Number of Clusters", min_value=2, max_value=6, value=3)
-                    
-                    # Perform clustering
-                    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-                    clusters = kmeans.fit_predict(X)
-                    features_df['Cluster'] = clusters
-                    
-                    # Visualization options
-                    viz_type = st.selectbox(
-                        "Select Visualization Type",
-                        ["3D Scatter", "2D Scatter Matrix", "Feature Importance"]
-                    )
-                    
-                    if viz_type == "3D Scatter":
-                        fig = px.scatter_3d(
-                            features_df,
-                            x='years',
-                            y='role',
-                            z='personality',
-                            color='Cluster',
-                            title='Experience and Personality Clusters',
-                            labels={
-                                'years': 'Years in Construction',
-                                'role': 'Role',
-                                'personality': 'Personality Type'
-                            }
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                    
-                    elif viz_type == "2D Scatter Matrix":
-                        fig = px.scatter_matrix(
-                            features_df,
-                            dimensions=['years', 'project_size', 'personality'],
-                            color='Cluster',
-                            title='Feature Relationships by Cluster'
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                    
-                    else:  # Feature Importance
-                        # Calculate feature importance based on cluster separation
-                        feature_importance = {}
-                        for col in X.columns:
-                            variance_ratio = np.var(X[col]) / np.var(X[col].groupby(clusters).transform('mean'))
-                            feature_importance[col] = variance_ratio
-                        
-                        # Plot feature importance
-                        fig = px.bar(
-                            x=list(feature_importance.keys()),
-                            y=list(feature_importance.values()),
-                            title='Feature Importance in Clustering',
-                            labels={'x': 'Feature', 'y': 'Importance Score'}
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Show cluster summary
-                    st.subheader("Cluster Summary")
-                    for cluster in range(n_clusters):
-                        cluster_data = features_df[features_df['Cluster'] == cluster]
-                        st.write(f"Cluster {cluster + 1}:")
-                        st.write(f"- Size: {len(cluster_data)} members ({(len(cluster_data)/len(features_df)*100):.1f}%)")
-                        st.write(f"- Average Years: {cluster_data['years'].mean():.1f}")
-                        st.write(f"- Common Roles: {', '.join(cluster_data['role'].value_counts().head(2).index)}")
-                        st.write(f"- Common Project Sizes: {', '.join(cluster_data['project_size'].value_counts().head(2).index)}")
-                        st.write(f"- Common Personality Types: {', '.join(cluster_data['personality'].value_counts().head(2).index)}")
-                        st.write("---")
-                    
-                    # K-Means Clustering Analysis
-                    st.subheader("Personality Cluster Analysis")
-                    
-                    # Prepare data for clustering
-                    cluster_data = []
-                    for _, row in filtered_df.iterrows():
-                        try:
-                            # Get numeric features with strict validation
-                            years_str = str(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
-                            years = float(''.join(c for c in years_str if c.isdigit()) or '0')
+                        if not features_data:
+                            st.warning("No valid personality data found for the selected filters.")
+                            st.empty()  # Use empty instead of return
+                        else:
+                            # Continue with clustering if we have valid data
+                            features_df = pd.DataFrame(features_data)
                             
-                            project_size_map = {
-                                'small': 1,
-                                'medium': 2,
-                                'large': 3
-                            }
-                            project_size = project_size_map.get(
-                                row.get('skills', {}).get('experience', {}).get('projectSize', 'small'),
-                                1  # Default to small if missing
+                            # Encode categorical variables
+                            categorical_columns = ['role', 'project_size', 'personality']
+                            encoded_features = pd.get_dummies(features_df[categorical_columns])
+                            
+                            # Combine with numerical features
+                            X = pd.concat([features_df[['years']], encoded_features], axis=1)
+                            
+                            # Normalize features
+                            X = (X - X.mean()) / X.std()
+                            
+                            # Let user select number of clusters
+                            n_clusters = st.slider("Number of Clusters", min_value=2, max_value=6, value=3)
+                            
+                            # Perform clustering
+                            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+                            clusters = kmeans.fit_predict(X)
+                            features_df['Cluster'] = clusters
+                            
+                            # Visualization options
+                            viz_type = st.selectbox(
+                                "Select Visualization Type",
+                                ["3D Scatter", "2D Scatter Matrix", "Feature Importance"]
                             )
                             
-                            # Get personality type with validation
-                            mbti = row.get('personalityTraits', {}).get('myersBriggs', {})
-                            if not isinstance(mbti, dict):
-                                mbti = {}
+                            if viz_type == "3D Scatter":
+                                fig = px.scatter_3d(
+                                    features_df,
+                                    x='years',
+                                    y='role',
+                                    z='personality',
+                                    color='Cluster',
+                                    title='Experience and Personality Clusters',
+                                    labels={
+                                        'years': 'Years in Construction',
+                                        'role': 'Role',
+                                        'personality': 'Personality Type'
+                                    }
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
                             
-                            # Calculate personality score with defaults
-                            personality_score = 0
-                            for trait_type in ['attention', 'information', 'decisions', 'lifestyle']:
-                                trait_list = mbti.get(trait_type, [''])
-                                if trait_list and isinstance(trait_list, list):
-                                    trait = trait_list[0]
-                                    personality_score += 1 if trait in ['E', 'S', 'T', 'J'] else 0
+                            elif viz_type == "2D Scatter Matrix":
+                                fig = px.scatter_matrix(
+                                    features_df,
+                                    dimensions=['years', 'project_size', 'personality'],
+                                    color='Cluster',
+                                    title='Feature Relationships by Cluster'
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
                             
-                            # Only add if we have valid numeric values
-                            if years >= 0 and project_size in [1, 2, 3]:
-                                cluster_data.append({
-                                    'Years': years,
-                                    'Project Size': project_size,
-                                    'Personality Score': personality_score
-                                })
-                        except Exception as e:
-                            continue  # Skip invalid entries
-                    
-                    if len(cluster_data) >= 3:  # Only proceed if we have enough valid data
-                        cluster_df = pd.DataFrame(cluster_data)
-                        
-                        # Standardize features
-                        X_cluster = StandardScaler().fit_transform(cluster_df)
-                        
-                        # Perform K-means clustering
-                        from sklearn.cluster import KMeans
-                        n_clusters = 3
-                        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-                        clusters = kmeans.fit_predict(X_cluster)
-                        
-                        # Add clusters to dataframe
-                        cluster_df['Cluster'] = clusters
-                        
-                        # Create 3D scatter plot
-                        fig = px.scatter_3d(
-                            cluster_df,
-                            x='Years',
-                            y='Project Size',
-                            z='Personality Score',
-                            color='Cluster',
-                            title='Personality Clusters',
-                            labels={
-                                'Years': 'Years of Experience',
-                                'Project Size': 'Project Size (1=Small, 3=Large)',
-                                'Personality Score': 'Personality Type Score'
-                            },
-                            color_continuous_scale='Viridis'
-                        )
-                        
-                        # Update layout
-                        fig.update_layout(
-                            scene = dict(
-                                xaxis_title='Years of Experience',
-                                yaxis_title='Project Size',
-                                zaxis_title='Personality Score'
-                            ),
-                            height=700
-                        )
-                        
-                        st.plotly_chart(fig, use_container_width=True)
-                        
-                        # Add cluster analysis
-                        st.subheader("Cluster Analysis")
-                        
-                        # Calculate cluster statistics
-                        cluster_stats = cluster_df.groupby('Cluster').agg({
-                            'Years': ['mean', 'count'],
-                            'Project Size': 'mean',
-                            'Personality Score': 'mean'
-                        }).round(2)
-                        
-                        # Format cluster statistics
-                        cluster_stats.columns = [
-                            'Avg Years', 'Count', 'Avg Project Size', 'Avg Personality Score'
-                        ]
-                        st.dataframe(cluster_stats)
-                        
-                        # Add interpretation
-                        st.info("""
-                        Cluster Analysis Interpretation:
-                        - Each point represents a survey respondent
-                        - Colors indicate different personality clusters
-                        - Clusters are based on years of experience, project size, and personality type
-                        - Similar profiles are grouped together
-                        - Hover over points to see detailed information
-                        """)
-                        
-                        # Add cluster descriptions
-                        st.subheader("Cluster Profiles")
-                        for i in range(n_clusters):
-                            stats = cluster_stats.iloc[i]
-                            st.write(f"**Cluster {i}** ({stats['Count']} members):")
-                            st.write(f"- Average Experience: {stats['Avg Years']:.1f} years")
-                            st.write(f"- Typical Project Size: {stats['Avg Project Size']:.1f}")
-                            st.write(f"- Personality Score: {stats['Avg Personality Score']:.1f}")
-                            st.write("")
-                    
+                            else:  # Feature Importance
+                                # Calculate feature importance based on cluster separation
+                                feature_importance = {}
+                                for col in X.columns:
+                                    variance_ratio = np.var(X[col]) / np.var(X[col].groupby(clusters).transform('mean'))
+                                    feature_importance[col] = variance_ratio
+                                
+                                # Plot feature importance
+                                fig = px.bar(
+                                    x=list(feature_importance.keys()),
+                                    y=list(feature_importance.values()),
+                                    title='Feature Importance in Clustering',
+                                    labels={'x': 'Feature', 'y': 'Importance Score'}
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+                            
+                            # Show cluster summary
+                            st.subheader("Cluster Summary")
+                            for cluster in range(n_clusters):
+                                cluster_data = features_df[features_df['Cluster'] == cluster]
+                                st.write(f"Cluster {cluster + 1}:")
+                                st.write(f"- Size: {len(cluster_data)} members ({(len(cluster_data)/len(features_df)*100):.1f}%)")
+                                st.write(f"- Average Years: {cluster_data['years'].mean():.1f}")
+                                st.write(f"- Common Roles: {', '.join(cluster_data['role'].value_counts().head(2).index)}")
+                                st.write(f"- Common Project Sizes: {', '.join(cluster_data['project_size'].value_counts().head(2).index)}")
+                                st.write(f"- Common Personality Types: {', '.join(cluster_data['personality'].value_counts().head(2).index)}")
+                                st.write("---")
+                            
+                            # K-Means Clustering Analysis
+                            st.subheader("Personality Cluster Analysis")
+                            
+                            # Prepare data for clustering
+                            cluster_data = []
+                            for _, row in filtered_df.iterrows():
+                                try:
+                                    # Get numeric features with strict validation
+                                    years_str = str(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                                    years = float(''.join(c for c in years_str if c.isdigit()) or '0')
+                                    
+                                    project_size_map = {
+                                        'small': 1,
+                                        'medium': 2,
+                                        'large': 3
+                                    }
+                                    project_size = project_size_map.get(
+                                        row.get('skills', {}).get('experience', {}).get('projectSize', 'small'),
+                                        1  # Default to small if missing
+                                    )
+                                    
+                                    # Get personality type with validation
+                                    mbti = row.get('personalityTraits', {}).get('myersBriggs', {})
+                                    if not isinstance(mbti, dict):
+                                        mbti = {}
+                                    
+                                    # Calculate personality score with defaults
+                                    personality_score = 0
+                                    for trait_type in ['attention', 'information', 'decisions', 'lifestyle']:
+                                        trait_list = mbti.get(trait_type, [''])
+                                        if trait_list and isinstance(trait_list, list):
+                                            trait = trait_list[0]
+                                            personality_score += 1 if trait in ['E', 'S', 'T', 'J'] else 0
+                                    
+                                    # Only add if we have valid numeric values
+                                    if years >= 0 and project_size in [1, 2, 3]:
+                                        cluster_data.append({
+                                            'Years': years,
+                                            'Project Size': project_size,
+                                            'Personality Score': personality_score
+                                        })
+                                except Exception as e:
+                                    continue  # Skip invalid entries
+                            
+                            if len(cluster_data) >= 3:  # Only proceed if we have enough valid data
+                                cluster_df = pd.DataFrame(cluster_data)
+                                
+                                # Standardize features
+                                X_cluster = StandardScaler().fit_transform(cluster_df)
+                                
+                                # Perform K-means clustering
+                                from sklearn.cluster import KMeans
+                                n_clusters = 3
+                                kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+                                clusters = kmeans.fit_predict(X_cluster)
+                                
+                                # Add clusters to dataframe
+                                cluster_df['Cluster'] = clusters
+                                
+                                # Create 3D scatter plot
+                                fig = px.scatter_3d(
+                                    cluster_df,
+                                    x='Years',
+                                    y='Project Size',
+                                    z='Personality Score',
+                                    color='Cluster',
+                                    title='Personality Clusters',
+                                    labels={
+                                        'Years': 'Years of Experience',
+                                        'Project Size': 'Project Size (1=Small, 3=Large)',
+                                        'Personality Score': 'Personality Type Score'
+                                    },
+                                    color_continuous_scale='Viridis'
+                                )
+                                
+                                # Update layout
+                                fig.update_layout(
+                                    scene = dict(
+                                        xaxis_title='Years of Experience',
+                                        yaxis_title='Project Size',
+                                        zaxis_title='Personality Score'
+                                    ),
+                                    height=700
+                                )
+                                
+                                st.plotly_chart(fig, use_container_width=True)
+                                
+                                # Add cluster analysis
+                                st.subheader("Cluster Analysis")
+                                
+                                # Calculate cluster statistics
+                                cluster_stats = cluster_df.groupby('Cluster').agg({
+                                    'Years': ['mean', 'count'],
+                                    'Project Size': 'mean',
+                                    'Personality Score': 'mean'
+                                }).round(2)
+                                
+                                # Format cluster statistics
+                                cluster_stats.columns = [
+                                    'Avg Years', 'Count', 'Avg Project Size', 'Avg Personality Score'
+                                ]
+                                st.dataframe(cluster_stats)
+                                
+                                # Add interpretation
+                                st.info("""
+                                Cluster Analysis Interpretation:
+                                - Each point represents a survey respondent
+                                - Colors indicate different personality clusters
+                                - Clusters are based on years of experience, project size, and personality type
+                                - Similar profiles are grouped together
+                                - Hover over points to see detailed information
+                                """)
+                                
+                                # Add cluster descriptions
+                                st.subheader("Cluster Profiles")
+                                for i in range(n_clusters):
+                                    stats = cluster_stats.iloc[i]
+                                    st.write(f"**Cluster {i}** ({stats['Count']} members):")
+                                    st.write(f"- Average Experience: {stats['Avg Years']:.1f} years")
+                                    st.write(f"- Typical Project Size: {stats['Avg Project Size']:.1f}")
+                                    st.write(f"- Personality Score: {stats['Avg Personality Score']:.1f}")
+                                    st.write("")
+                            
                 except Exception as e:
                     st.error(f"Clustering error: {str(e)}")
                     st.write("Unable to generate personality cluster visualization")
