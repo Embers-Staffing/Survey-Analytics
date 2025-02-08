@@ -703,18 +703,54 @@ if check_password():
                     
                     if all_skills:
                         skills_df = pd.DataFrame(all_skills, columns=['Skill'])
-                        fig = px.histogram(
+                        
+                        # Skills Distribution Chart
+                        fig1 = px.histogram(
                             skills_df,
                             x='Skill',
                             title='Technical Skills Distribution',
                             color_discrete_sequence=['#2ecc71']
                         )
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig1, use_container_width=True, key="skills_hist")
+                        
+                        # Add Skills Summary
+                        st.subheader("Skills Breakdown")
+                        skill_counts = skills_df['Skill'].value_counts()
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            # Pie Chart
+                            fig2 = px.pie(
+                                values=skill_counts.values,
+                                names=skill_counts.index,
+                                title='Skills Distribution (Pie Chart)'
+                            )
+                            st.plotly_chart(fig2, use_container_width=True, key="skills_pie")
+                        
+                        with col2:
+                            # Bar Chart
+                            fig3 = px.bar(
+                                x=skill_counts.index,
+                                y=skill_counts.values,
+                                title='Skills Distribution (Bar Chart)',
+                                labels={'x': 'Skill', 'y': 'Count'}
+                            )
+                            st.plotly_chart(fig3, use_container_width=True, key="skills_bar")
+                        
+                        # Skills Summary Table
+                        st.subheader("Skills Summary")
+                        summary_df = pd.DataFrame({
+                            'Skill': skill_counts.index,
+                            'Count': skill_counts.values,
+                            'Percentage': (skill_counts.values / len(skills_df) * 100).round(1)
+                        })
+                        st.dataframe(summary_df, use_container_width=True)
+                        
                     else:
-                        st.write("No technical skills found in the data")
+                        st.info("No technical skills found in the data")
                 except Exception as e:
                     st.error(f"Skills analysis error: {str(e)}")
-                    st.write("No technical skills data available")
+                    st.write("Unable to analyze technical skills")
 
     with tabs[2]:  # Data Tab
         st.markdown("### 📋 Raw Data Explorer")
