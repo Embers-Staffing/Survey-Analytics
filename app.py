@@ -473,35 +473,27 @@ if check_password():
                 # Create Sankey diagram with improved styling
                 fig = go.Figure(data=[go.Sankey(
                     node = dict(
-                        pad = 40,  # Increased padding
-                        thickness = 25,  # Adjusted thickness
+                        pad = 20,
+                        thickness = 30,
                         line = dict(color = "black", width = 0.5),
                         label = all_roles,
-                        # Use a list of colors for nodes
-                        color = ["#1f77b4"] * len(all_roles),  # Same blue color for all nodes
-                        font = dict(size = 14, color = "black")  # Larger, clearer font
+                        color = px.colors.qualitative.Set3[:len(all_roles)],
+                        font = dict(size = 12, color = "black")
                     ),
                     link = dict(
                         source = source,
                         target = target,
                         value = value,
-                        # Use a list of colors for links
-                        color = ["rgba(44, 160, 44, 0.4)"] * len(source)  # Same green color for all links
+                        color = [f'rgba(44, 160, 44, {v/max(value)})' for v in value]
                     )
                 )])
                 
-                # Update layout for better visibility
+                # Update layout
                 fig.update_layout(
-                    title = dict(
-                        text = "Career Progression Paths",
-                        font = dict(size=24),
-                        y = 0.95
-                    ),
-                    font_size = 14,
-                    height = 800,  # Increased height
-                    margin = dict(t=60, l=20, r=20, b=20),
-                    paper_bgcolor = 'white',
-                    plot_bgcolor = 'white'
+                    title_text="Career Progression Paths",
+                    font_size=12,
+                    height=600,
+                    margin=dict(t=40, l=0, r=0, b=0)
                 )
                 
                 # Show diagram
