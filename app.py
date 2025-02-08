@@ -108,11 +108,17 @@ if check_password():
         with col1:
             st.metric("Total Responses", len(df))
         with col2:
-            st.metric("Average Years in Construction", 
-                     round(df['personal_yearsInConstruction'].astype(float).mean(), 1))
+            try:
+                years_mean = round(df['personal_yearsInConstruction'].astype(float).mean(), 1)
+                st.metric("Average Years in Construction", years_mean)
+            except:
+                st.metric("Average Years in Construction", "N/A")
         with col3:
-            st.metric("Most Common Role", 
-                     df['skills.experience.role'].mode()[0] if not df['skills.experience.role'].empty else "N/A")
+            try:
+                role = df['skills_experience']['role'].mode()[0] if not df['skills_experience']['role'].empty else "N/A"
+                st.metric("Most Common Role", role)
+            except:
+                st.metric("Most Common Role", "N/A")
 
         # Basic visualizations (using seaborn)
         st.subheader("Years in Construction Distribution")
