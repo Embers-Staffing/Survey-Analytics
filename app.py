@@ -46,8 +46,7 @@ st.set_page_config(
 
 # Add theme selector to sidebar
 with st.sidebar:
-    st.markdown("---")
-    st.markdown("Use Streamlit's settings menu (⋮) to switch between light and dark mode")
+    pass
 
 # Add section headers with icons and descriptions
 def section_header(icon, title, description):
