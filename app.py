@@ -434,6 +434,7 @@ if check_password():
                     current_role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
                     target_roles = row.get('workPreferences', {}).get('roles', ['Unknown'])
                     target_role = target_roles[0] if target_roles else 'Unknown'
+                    salary_level = row.get('goals', {}).get('targetSalary', 'entry')
                     
                     # Clean up role names
                     current_role = current_role.replace('-', ' ').title()
@@ -442,6 +443,7 @@ if check_password():
                     role_progression.append({
                         'Current Role': current_role,
                         'Target Role': target_role,
+                        'Salary Level': salary_level.title(),
                         'Count': 1
                     })
                 except:
@@ -450,22 +452,34 @@ if check_password():
             if role_progression:
                 # Create DataFrame and aggregate counts
                 prog_df = pd.DataFrame(role_progression)
-                role_counts = prog_df.groupby(['Current Role', 'Target Role']).size().reset_index(name='Count')
                 
-                # Create Treemap
-                fig = px.treemap(
-                    role_counts,
-                    path=[px.Constant("All Roles"), 'Current Role', 'Target Role'],
-                    values='Count',
-                    title='Career Progression Paths',
-                    color='Count',
-                    color_continuous_scale='RdBu',
-                    hover_data=['Count']
-                )
+                # Create Alluvial Diagram
+                fig = go.Figure(data=[go.Sankey(
+                    node = dict(
+                        pad = 15,
+                        thickness = 20,
+                        line = dict(color = "black", width = 0.5),
+                        label = list(set(prog_df['Current Role'].unique()).union(
+                                   prog_df['Target Role'].unique()).union(
+                                   prog_df['Salary Level'].unique())),
+                        color = "lightblue"
+                    ),
+                    link = dict(
+                        source = [prog_df['Current Role'].unique().tolist().index(x) for x in prog_df['Current Role']] +
+                                [len(prog_df['Current Role'].unique()) + prog_df['Target Role'].unique().tolist().index(x) 
+                                 for x in prog_df['Target Role']],
+                        target = [len(prog_df['Current Role'].unique()) + prog_df['Target Role'].unique().tolist().index(x) 
+                                 for x in prog_df['Target Role']] +
+                                [len(prog_df['Current Role'].unique()) + len(prog_df['Target Role'].unique()) + 
+                                 prog_df['Salary Level'].unique().tolist().index(x) for x in prog_df['Salary Level']],
+                        value = [1] * (len(prog_df) * 2),
+                        color = "rgba(44, 160, 44, 0.4)"
+                    )
+                )])
                 
                 # Update layout
                 fig.update_layout(
-                    title_text="Career Progression Paths",
+                    title_text="Career Progression Flow",
                     font_size=12,
                     height=600,
                     margin=dict(t=50, l=25, r=25, b=25)
@@ -473,6 +487,16 @@ if check_password():
                 
                 # Show visualization
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # Add explanation
+                st.info("""
+                This Alluvial diagram shows the flow of career progression:
+                - Left: Current Roles
+                - Middle: Target Roles
+                - Right: Target Salary Levels
+                
+                The width of the flows indicates the number of respondents following each path.
+                """)
 
         # Skills Analysis
         with st.expander("Skills Analysis", expanded=True):
