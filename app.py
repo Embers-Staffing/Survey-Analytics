@@ -11,8 +11,8 @@ import numpy as np
 from auth import check_password
 
 # Set style for seaborn
-sns.set_style("whitegrid")
-plt.style.use("seaborn")
+sns.set_theme(style="whitegrid")
+plt.style.use('default')
 
 # Initialize Firebase
 if not firebase_admin._apps:
