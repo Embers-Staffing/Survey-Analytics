@@ -316,15 +316,22 @@ if check_password():
                             mbti_types.append(attention[0])
             
             if mbti_types:
-                mbti_df = pd.DataFrame(mbti_types, columns=['Type'])
+                # Create DataFrame and get value counts
+                mbti_counts = pd.Series(mbti_types).value_counts()
+                
+                # Create bar chart
                 fig = px.bar(
-                    mbti_df['Type'].value_counts().reset_index(),
-                    x='index',
-                    y='Type',
+                    x=mbti_counts.index,
+                    y=mbti_counts.values,
                     title='MBTI Type Distribution',
-                    labels={'index': 'MBTI Type', 'Type': 'Count'}
+                    labels={'x': 'MBTI Type', 'y': 'Count'}
                 )
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # Show summary
+                st.write("MBTI Type Breakdown:")
+                for mbti_type, count in mbti_counts.items():
+                    st.write(f"- {mbti_type}: {count} responses")
             else:
                 st.write("No MBTI data found in the responses")
         except Exception as e:
