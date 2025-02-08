@@ -422,51 +422,117 @@ if check_password():
                         key="skills_viz_selector_overview"
                     )
                     
+                    # Add interactive filters at the top
+                    st.subheader("Filter Options")
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        min_count = st.slider(
+                            "Minimum Skill Count",
+                            min_value=1,
+                            max_value=int(skills_df['Skill'].value_counts().max()),
+                            value=1,
+                            key="skill_count_filter"
+                        )
+                    
+                    with col2:
+                        selected_skills = st.multiselect(
+                            "Select Specific Skills",
+                            options=sorted(skills_df['Skill'].unique()),
+                            default=[],
+                            key="skill_selector"
+                        )
+                    
+                    # Filter data based on selections
+                    skill_counts = skills_df['Skill'].value_counts()
+                    filtered_skills = skill_counts[skill_counts >= min_count]
+                    
+                    if selected_skills:
+                        filtered_skills = filtered_skills[filtered_skills.index.isin(selected_skills)]
+                    
                     if viz_type == "Distribution":
-                        # Distribution charts
+                        # Enhanced Distribution charts
                         st.subheader("Skills Distribution")
                         
-                        # Histogram
+                        # Interactive Histogram
                         fig1 = px.histogram(
-                            skills_df,
+                            skills_df[skills_df['Skill'].isin(filtered_skills.index)],
                             x='Skill',
                             title='Technical Skills Distribution',
-                            color_discrete_sequence=['#2ecc71']
+                            color_discrete_sequence=['#2ecc71'],
+                            hover_data=['Skill'],
+                            labels={'count': 'Number of Responses', 'Skill': 'Technical Skill'}
                         )
-                        st.plotly_chart(fig1, use_container_width=True, key="skills_hist_overview")  # Updated key
-                        
-                        # Add Skills Summary
-                        st.subheader("Skills Breakdown")
-                        skill_counts = skills_df['Skill'].value_counts()
+                        fig1.update_layout(
+                            showlegend=True,
+                            hovermode='x unified',
+                            hoverlabel=dict(bgcolor="white"),
+                            xaxis_tickangle=-45
+                        )
+                        st.plotly_chart(fig1, use_container_width=True, key="skills_hist_overview")
                         
                         col1, col2 = st.columns(2)
                         with col1:
-                            # Pie Chart
+                            # Enhanced Pie Chart
                             fig2 = px.pie(
-                                values=skill_counts.values,
-                                names=skill_counts.index,
-                                title='Skills Distribution (Pie Chart)'
+                                values=filtered_skills.values,
+                                names=filtered_skills.index,
+                                title='Skills Distribution (Pie Chart)',
+                                hover_data=[filtered_skills.values],
+                                custom_data=[filtered_skills.values/len(skills_df)*100]
                             )
-                            st.plotly_chart(fig2, use_container_width=True, key="skills_pie_overview")  # Updated key
+                            fig2.update_traces(
+                                textposition='inside',
+                                hovertemplate="<b>%{label}</b><br>" +
+                                            "Count: %{value}<br>" +
+                                            "Percentage: %{customdata[0]:.1f}%"
+                            )
+                            st.plotly_chart(fig2, use_container_width=True, key="skills_pie_overview")
                         
                         with col2:
-                            # Bar Chart
+                            # Enhanced Bar Chart
                             fig3 = px.bar(
-                                x=skill_counts.index,
-                                y=skill_counts.values,
+                                x=filtered_skills.index,
+                                y=filtered_skills.values,
                                 title='Skills Distribution (Bar Chart)',
-                                labels={'x': 'Skill', 'y': 'Count'}
+                                labels={'x': 'Skill', 'y': 'Count'},
+                                color=filtered_skills.values,
+                                color_continuous_scale='Viridis'
                             )
-                            st.plotly_chart(fig3, use_container_width=True, key="skills_bar_overview")  # Updated key
+                            fig3.update_layout(
+                                xaxis_tickangle=-45,
+                                hovermode='x unified'
+                            )
+                            st.plotly_chart(fig3, use_container_width=True, key="skills_bar_overview")
                         
-                        # Skills Summary Table
+                        # Interactive Summary Table
                         st.subheader("Skills Summary")
                         summary_df = pd.DataFrame({
-                            'Skill': skill_counts.index,
-                            'Count': skill_counts.values,
-                            'Percentage': (skill_counts.values / len(skills_df) * 100).round(1)
-                        })
-                        st.dataframe(summary_df, use_container_width=True)
+                            'Skill': filtered_skills.index,
+                            'Count': filtered_skills.values,
+                            'Percentage': (filtered_skills.values / len(skills_df) * 100).round(1)
+                        }).sort_values('Count', ascending=False)
+                        
+                        # Add sorting options
+                        sort_by = st.selectbox(
+                            "Sort by",
+                            options=['Count', 'Skill', 'Percentage'],
+                            key="summary_sort"
+                        )
+                        ascending = st.checkbox("Ascending order", key="summary_order")
+                        
+                        summary_df = summary_df.sort_values(sort_by, ascending=ascending)
+                        st.dataframe(
+                            summary_df,
+                            use_container_width=True,
+                            column_config={
+                                "Percentage": st.column_config.NumberColumn(
+                                    "Percentage",
+                                    help="Percentage of total responses",
+                                    format="%.1f%%"
+                                )
+                            }
+                        )
                     elif viz_type == "Heatmap":
                         st.subheader("Skills Co-occurrence Heatmap")
                         
