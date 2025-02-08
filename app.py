@@ -116,7 +116,97 @@ if theme == 'Dark':
     </style>
     """, unsafe_allow_html=True)
 else:
-    # Keep your existing light theme CSS
+    st.markdown("""
+    <style>
+        /* Light theme */
+        .main {
+            padding: 2rem;
+            max-width: 100%;
+        }
+        
+        /* Headers */
+        h1 {
+            color: #1E3D59;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #F5F5F5;
+            margin-bottom: 2rem;
+        }
+        
+        /* Containers */
+        div[data-testid="stVerticalBlock"] > div {
+            padding: 0.5rem 0;
+        }
+        
+        /* Metrics */
+        div[data-testid="metric-container"] {
+            background-color: #F8F9FA;
+            border: 1px solid #E9ECEF;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin: 0.5rem 0;
+        }
+        
+        /* Expanders */
+        div[data-testid="stExpander"] {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 1rem 0;
+            border-radius: 8px;
+        }
+        
+        /* Tabs */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 2rem;
+            background-color: #F8F9FA;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            height: 3rem;
+            background-color: transparent;
+            border: none;
+            color: #495057;
+            font-weight: 500;
+            padding: 0 2rem;
+        }
+        
+        /* Charts */
+        div[data-testid="stHorizontalBlock"] {
+            gap: 2rem;
+            padding: 1rem 0;
+        }
+        
+        /* Tables */
+        div[data-testid="stTable"] {
+            background-color: #FFFFFF;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* Inputs */
+        div[data-baseweb="select"] {
+            background-color: #FFFFFF;
+            border-radius: 4px;
+        }
+        
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #F8F9FA;
+            padding: 0.5rem;
+            text-align: center;
+            border-top: 1px solid #E9ECEF;
+            font-size: 0.9rem;
+            color: #6C757D;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 # Update the footer to use the new class
 st.markdown("""
