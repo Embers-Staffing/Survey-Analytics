@@ -1112,6 +1112,10 @@ if check_password():
                     from sklearn.preprocessing import StandardScaler
                     from sklearn.decomposition import PCA
                     
+                    # Define features for PCA
+                    X = regression_df[['Years', 'Project Size']].values  # Define X here
+                    y = regression_df['Target Salary Level'].values
+                    
                     # Standardize features
                     scaler = StandardScaler()
                     X_scaled = scaler.fit_transform(X)
@@ -1162,12 +1166,6 @@ if check_password():
                         showlegend=True,
                         title_text="PCA Explained Variance Analysis"
                     )
-                    
-                    # Update axes labels
-                    fig.update_xaxes(title_text="Principal Components", row=1, col=1)
-                    fig.update_xaxes(title_text="Principal Components", row=1, col=2)
-                    fig.update_yaxes(title_text="Explained Variance Ratio", row=1, col=1)
-                    fig.update_yaxes(title_text="Cumulative Explained Variance", row=1, col=2)
                     
                     st.plotly_chart(fig, use_container_width=True)
                     
@@ -1229,7 +1227,6 @@ if check_password():
                         xx, yy = np.meshgrid(
                             np.arange(x_min, x_max, 0.1),
                             np.arange(y_min, y_max, 0.1)
-                        )
                         
                         # Fit a simple classifier with dynamic n_neighbors
                         clf = KNeighborsClassifier(n_neighbors=n_neighbors)
