@@ -10,6 +10,7 @@ from sklearn.cluster import KMeans
 import numpy as np
 from auth import check_password
 import plotly.graph_objects as go
+from datetime import datetime
 
 # Set style for seaborn
 sns.set_theme(style="whitegrid")
@@ -37,10 +38,150 @@ db = firestore.client()
 
 # Set page config
 st.set_page_config(
-    page_title="Survey Dashboard",
-    page_icon="📊",
-    layout="wide"
+    page_title="Construction Career Survey Dashboard",
+    page_icon="👷",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# Add custom CSS
+st.markdown("""
+<style>
+    /* Main container */
+    .main {
+        padding: 2rem;
+    }
+    
+    /* Headers */
+    h1 {
+        color: #1E3D59;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #F5F5F5;
+    }
+    h2 {
+        color: #2E5077;
+        margin-top: 2rem;
+    }
+    h3 {
+        color: #2E5077;
+        font-size: 1.3rem;
+    }
+    
+    /* Metrics */
+    div[data-testid="metric-container"] {
+        background-color: #F8F9FA;
+        border: 1px solid #E9ECEF;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+    }
+    
+    /* Expanders */
+    div[data-testid="stExpander"] {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2rem;
+        background-color: #F8F9FA;
+        padding: 0.5rem;
+        border-radius: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 3rem;
+        background-color: transparent;
+        border: none;
+        color: #495057;
+        font-weight: 500;
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #2E5077;
+    }
+    
+    /* Sidebar */
+    .css-1d391kg {
+        padding: 2rem 1rem;
+    }
+    
+    /* Buttons */
+    .stButton>button {
+        background-color: #2E5077;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+    }
+    .stButton>button:hover {
+        background-color: #1E3D59;
+    }
+    
+    /* Charts container */
+    div[data-testid="stHorizontalBlock"] {
+        gap: 2rem;
+        margin: 1rem 0;
+    }
+    
+    /* Info boxes */
+    div[data-testid="stAlert"] {
+        border: none;
+        border-radius: 8px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Update the main title and description
+st.title("👷 Construction Career Survey Dashboard")
+st.markdown("""
+<div style='background-color: #F8F9FA; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;'>
+    This dashboard provides insights into construction career trends, skills distribution, and personality analysis
+    based on survey responses. Use the filters in the sidebar to customize your view.
+</div>
+""", unsafe_allow_html=True)
+
+# Update sidebar styling
+st.sidebar.markdown("""
+<style>
+    .sidebar .sidebar-content {
+        background-color: #F8F9FA;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Add section headers with icons and descriptions
+def section_header(icon, title, description):
+    st.markdown(f"""
+    <div style='background-color: #F8F9FA; padding: 1rem; border-radius: 8px; margin: 1rem 0;'>
+        <h2 style='margin:0;'>{icon} {title}</h2>
+        <p style='color: #6C757D; margin-top: 0.5rem;'>{description}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Update tabs with better organization
+tabs = st.tabs([
+    "📊 Overview",
+    "🔍 Detailed Analysis",
+    "📋 Raw Data"
+])
+
+# Add loading spinners and progress bars
+with st.spinner("Loading data..."):
+    # Your existing data loading code...
+    pass
+
+# Add tooltips and help text
+st.sidebar.info("ℹ️ Use these filters to customize the dashboard view")
+
+# Add footer
+st.markdown("""
+<div style='position: fixed; bottom: 0; width: 100%; background-color: #F8F9FA; padding: 1rem; text-align: center;'>
+    <p style='color: #6C757D; margin: 0;'>
+        Construction Career Survey Dashboard | Updated: {datetime.now().strftime('%Y-%m-%d')}
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 def create_correlation_heatmap(df, columns):
     # Create correlation matrix
@@ -190,7 +331,7 @@ def apply_filters(df, filters):
 
 # Main dashboard code
 if check_password():
-    st.title("Construction Career Survey Dashboard")
+    st.title("👷 Construction Career Survey Dashboard")
     
     # Load data
     with st.spinner("Loading survey data..."):
