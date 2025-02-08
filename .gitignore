@@ -3,10 +3,11 @@
 firebase-credentials.json
 *.json
 !package.json
+.env
 
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-.env
-.DS_Store 
+*.pyc
+
+# System files
+.DS_Store
