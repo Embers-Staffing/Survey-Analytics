@@ -39,7 +39,7 @@ db = firestore.client()
 # Set page config
 st.set_page_config(
     page_title="Construction Career Survey Dashboard",
-    page_icon="👷",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -133,7 +133,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Update the main title and description
-st.title("👷 Construction Career Survey Dashboard")
+st.title("Construction Career Survey Dashboard")
 st.markdown("""
 <div style='background-color: #F8F9FA; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;'>
     This dashboard provides insights into construction career trends, skills distribution, and personality analysis
@@ -161,9 +161,9 @@ def section_header(icon, title, description):
 
 # Update tabs with better organization
 tabs = st.tabs([
-    "📊 Overview",
-    "📈 Analytics",
-    "📋 Data"
+    "Overview",
+    "Analytics",
+    "Data"
 ])
 
 # Add loading spinners and progress bars
@@ -172,7 +172,7 @@ with st.spinner("Loading data..."):
     pass
 
 # Add tooltips and help text
-st.sidebar.info("ℹ️ Use these filters to customize the dashboard view")
+st.sidebar.info("Use these filters to customize the dashboard view")
 
 # Add footer
 st.markdown("""
@@ -354,13 +354,13 @@ if check_password():
     </style>""", unsafe_allow_html=True)
 
     tabs = st.tabs([
-        "📊 Overview",
-        "📈 Analytics",
-        "📋 Data"
+        "Overview",
+        "Analytics",
+        "Data"
     ])
 
     with tabs[0]:  # Overview Tab
-        st.markdown("### 📊 Survey Overview")
+        st.markdown("### Survey Overview")
         st.markdown("""
         <style>
         div[data-testid="stExpander"] div[role="button"] p {
@@ -440,7 +440,7 @@ if check_password():
                     st.write(f"Error calculating roles: {str(e)}")
 
         # Career Development
-        with st.expander("🎯 Career Development Analysis", expanded=True):
+        with st.expander("Career Development Analysis", expanded=True):
             st.subheader("Career Goals and Preferences")
             col1, col2 = st.columns(2)
             
@@ -539,7 +539,7 @@ if check_password():
                 st.plotly_chart(fig, use_container_width=True)
 
         # Skills Analysis
-        with st.expander("🛠️ Skills Analysis", expanded=True):
+        with st.expander("Skills Analysis", expanded=True):
             st.subheader("Technical Skills and Experience")
             try:
                 # Extract technical skills
@@ -823,7 +823,7 @@ if check_password():
                 st.write("No technical skills data available")
 
     with tabs[1]:  # Analytics Tab
-        st.markdown("### 📈 Advanced Analytics")
+        st.markdown("### Advanced Analytics")
         
         # Analytics sections in expandable containers
         analysis_type = st.radio(
@@ -836,7 +836,7 @@ if check_password():
         
         if analysis_type == "Personality Clusters":
             with st.container():
-                st.subheader("🧩 Personality Clustering")
+                st.subheader("Personality Clustering")
                 try:
                     # Create features for clustering
                     features_data = []
@@ -1009,7 +1009,7 @@ if check_password():
 
         elif analysis_type == "Career Progression":
             with st.container():
-                st.subheader("📈 Career Progression Analysis")
+                st.subheader("Career Progression Analysis")
                 try:
                     # Prepare data for regression
                     regression_data = []
@@ -1138,7 +1138,7 @@ if check_password():
 
         else:  # Skills Analysis
             with st.container():
-                st.subheader("🛠️ Skills Distribution")
+                st.subheader("Skills Distribution")
                 try:
                     # Extract technical skills
                     all_skills = []
@@ -1201,19 +1201,19 @@ if check_password():
                     st.write("No technical skills data available")
 
     with tabs[2]:  # Data Tab
-        st.markdown("### 📋 Raw Data Explorer")
+        st.markdown("### Raw Data Explorer")
         
         # Add data download button
         csv = filtered_df.to_csv(index=False)
         st.download_button(
-            label="📥 Download Data as CSV",
+            label="Download Data as CSV",
             data=csv,
             file_name="survey_data.csv",
             mime="text/csv",
         )
         
         # Add search/filter options
-        search_term = st.text_input("🔍 Search in data")
+        search_term = st.text_input("Search in data")
         if search_term:
             filtered_df = filtered_df[filtered_df.astype(str).apply(
                 lambda x: x.str.contains(search_term, case=False).any(), axis=1
