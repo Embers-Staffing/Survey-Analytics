@@ -1,23 +1,23 @@
 import streamlit as st
 import hmac
+import os
 
 def check_password():
     """Returns `True` if the user had the correct password."""
     def password_entered():
         """Checks whether a password entered by the user is correct."""
         try:
-            # Temporary debug info
-            st.write("Available secrets:", st.secrets.keys())
-            st.write("Password in session:", "password" in st.session_state)
+            # Try to get password from secrets or environment variable
+            correct_password = st.secrets.get("password") or os.environ.get("STREAMLIT_PASSWORD", "9aba7500")
             
-            if st.session_state["password"] == st.secrets["password"]:
+            if st.session_state["password"] == correct_password:
                 st.session_state["password_correct"] = True
                 del st.session_state["password"]
             else:
                 st.session_state["password_correct"] = False
                 st.error("😕 Password incorrect")
         except Exception as e:
-            st.error(f"Configuration error: {str(e)}")
+            st.error(f"Authentication error. Please try again.")
             return False
 
     if "password_correct" not in st.session_state:
