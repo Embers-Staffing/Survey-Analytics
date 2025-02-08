@@ -797,58 +797,58 @@ if check_password():
             with st.container():
                 st.subheader("Personality Clustering")
                 try:
+                    # Check if we have enough data after filtering
+                    if len(filtered_df) < 3:
+                        st.warning("Not enough data for clustering. Please adjust your filters.")
+                        return
+                    
                     # Create features for clustering
                     features_data = []
                     for _, row in filtered_df.iterrows():
                         try:
-                            # Get years in construction
-                            years_str = row.get('personalInfo', {}).get('yearsInConstruction', '0')
-                            years = float(years_str) if years_str.isdigit() else 0.0
+                            # Get years in construction with better error handling
+                            years_str = str(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                            years = float(''.join(c for c in years_str if c.isdigit()) or '0')
                             
-                            # Get role and project size
+                            # Get role and project size with defaults
                             experience = row.get('skills', {}).get('experience', {})
                             role = experience.get('role', 'Unknown')
-                            project_size = experience.get('projectSize', 'Unknown')
+                            project_size = experience.get('projectSize', 'small')
                             
-                            # Get personality traits
+                            # Get personality traits with validation
                             traits = row.get('personalityTraits', {})
+                            if not isinstance(traits, dict):
+                                continue
+                                
                             mbti = traits.get('myersBriggs', {})
-                            holland = traits.get('hollandCode', [])
-                            
-                            # Combine MBTI traits
-                            personality_type = (
-                                mbti.get('attention', [''])[0] + 
-                                mbti.get('information', [''])[0] + 
-                                mbti.get('decisions', [''])[0] + 
-                                mbti.get('lifestyle', [''])[0]
-                            )
-                            
-                            # Get career preferences
-                            work_prefs = row.get('workPreferences', {})
-                            environment = work_prefs.get('environment', 'Unknown')
-                            travel = work_prefs.get('travelWillingness', 'Unknown')
-                            
-                            if years >= 0 and role and personality_type:
+                            if not isinstance(mbti, dict):
+                                continue
+                                
+                            # Only add if we have valid MBTI data
+                            if all(key in mbti for key in ['attention', 'information', 'decisions', 'lifestyle']):
                                 features_data.append({
                                     'years': years,
                                     'role': role,
                                     'project_size': project_size,
-                                    'personality': personality_type,
-                                    'holland_primary': holland[0] if holland else 'Unknown',
-                                    'environment': environment,
-                                    'travel': travel
+                                    'personality': ''.join([
+                                        mbti['attention'][0],
+                                        mbti['information'][0],
+                                        mbti['decisions'][0],
+                                        mbti['lifestyle'][0]
+                                    ])
                                 })
-                        except (ValueError, TypeError, AttributeError) as e:
+                        except:
                             continue
                     
                     if not features_data:
-                        raise ValueError("No valid data for clustering")
-                    
-                    # Create DataFrame for clustering
+                        st.warning("No valid personality data found for the selected filters.")
+                        return
+                        
+                    # Continue with clustering if we have valid data
                     features_df = pd.DataFrame(features_data)
                     
                     # Encode categorical variables
-                    categorical_columns = ['role', 'project_size', 'personality', 'holland_primary', 'environment', 'travel']
+                    categorical_columns = ['role', 'project_size', 'personality']
                     encoded_features = pd.get_dummies(features_df[categorical_columns])
                     
                     # Combine with numerical features
@@ -890,7 +890,7 @@ if check_password():
                     elif viz_type == "2D Scatter Matrix":
                         fig = px.scatter_matrix(
                             features_df,
-                            dimensions=['years', 'project_size', 'environment'],
+                            dimensions=['years', 'project_size', 'personality'],
                             color='Cluster',
                             title='Feature Relationships by Cluster'
                         )
@@ -922,7 +922,6 @@ if check_password():
                         st.write(f"- Common Roles: {', '.join(cluster_data['role'].value_counts().head(2).index)}")
                         st.write(f"- Common Project Sizes: {', '.join(cluster_data['project_size'].value_counts().head(2).index)}")
                         st.write(f"- Common Personality Types: {', '.join(cluster_data['personality'].value_counts().head(2).index)}")
-                        st.write(f"- Preferred Environments: {', '.join(cluster_data['environment'].value_counts().head(2).index)}")
                         st.write("---")
                     
                     # K-Means Clustering Analysis
