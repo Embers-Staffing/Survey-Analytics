@@ -477,9 +477,9 @@ if check_password():
                         thickness = 25,  # Adjusted thickness
                         line = dict(color = "black", width = 0.5),
                         label = all_roles,
-                        # Use a fixed color array instead of color scale
-                        color = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
-                                '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'][:len(all_roles)],
+                        # Use a list of colors instead of a color scale
+                        color = ["#" + ''.join([hex(x)[2:].zfill(2) for x in np.random.randint(0, 256, 3)]) 
+                                for _ in range(len(all_roles))],
                         font = dict(size = 14, color = "black")  # Larger, clearer font
                     ),
                     link = dict(
@@ -487,7 +487,7 @@ if check_password():
                         target = target,
                         value = value,
                         # Use a consistent color with opacity
-                        color = ['rgba(44, 160, 44, 0.4)'] * len(source)
+                        color = ["rgba(44, 160, 44, 0.4)"] * len(source)
                     )
                 )])
                 
