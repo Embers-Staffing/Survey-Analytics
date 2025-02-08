@@ -1515,4 +1515,25 @@ if check_password():
                 lambda x: x.str.contains(search_term, case=False).any(), axis=1
             )]
         
-        st.dataframe(filtered_df) 
+        st.dataframe(filtered_df)
+
+    # Add footer
+    st.markdown("""
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #f8f9fa;
+        color: #6c757d;
+        text-align: center;
+        padding: 10px;
+        font-size: 14px;
+        border-top: 1px solid #dee2e6;
+    }
+    </style>
+    <div class="footer">
+        <p>© Embers Staffing 2025 | Built by <a href="https://github.com/ArsCodeAmatoria" target="_blank">ArsCodeAmatoria</a></p>
+    </div>
+    """, unsafe_allow_html=True) 
