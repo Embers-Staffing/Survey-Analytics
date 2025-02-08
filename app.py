@@ -1247,6 +1247,7 @@ if check_password():
                         xx, yy = np.meshgrid(
                             np.arange(x_min, x_max, 0.1),
                             np.arange(y_min, y_max, 0.1)
+                        )
                         
                         # Fit a simple classifier with dynamic n_neighbors
                         clf = KNeighborsClassifier(n_neighbors=n_neighbors)
