@@ -39,6 +39,25 @@ def check_password():
             margin-bottom: 30px;
             font-size: 1.5em;
         }
+        /* Hide default Streamlit container */
+        div[data-testid="stVerticalBlock"] {
+            gap: 0 !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        /* Style the text input */
+        .stTextInput input {
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .stTextInput input:focus {
+            border-color: #1E67C7;
+            box-shadow: 0 0 0 2px rgba(30, 103, 199, 0.2);
+        }
         .footer {
             position: fixed;
             left: 0;
