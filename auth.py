@@ -3,8 +3,11 @@ import hmac
 
 def check_password():
     """Returns `True` if the user had the correct password."""
+    
+    # Add debug info
     if "password" not in st.secrets:
         st.error("Dashboard password not configured. Please contact administrator.")
+        st.write("Available secrets:", list(st.secrets.keys()))  # This will help debug
         return False
         
     def password_entered():
