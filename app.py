@@ -53,30 +53,61 @@ def create_correlation_heatmap(df, columns):
 
 def analyze_personality_clusters(df):
     try:
+        # Debug print
+        st.write("DataFrame columns:", df.columns.tolist())
+        st.write("Sample personality data:", df['personalityTraits'].iloc[0] if 'personalityTraits' in df.columns else "No personality data")
+        
         # Prepare data for clustering
         le = LabelEncoder()
         
         # Encode Holland codes
         holland_codes = []
         for idx, row in df.iterrows():
-            if isinstance(row.get('personalityTraits', {}).get('hollandCode'), list):
-                holland_codes.append(row['personalityTraits']['hollandCode'][0])
+            traits = row.get('personalityTraits', {})
+            if isinstance(traits, dict):
+                holland = traits.get('hollandCode', [])
+                if isinstance(holland, list) and holland:
+                    holland_codes.append(holland[0])
+                else:
+                    holland_codes.append('None')
             else:
                 holland_codes.append('None')
+        
+        # Debug print
+        st.write("Holland codes:", holland_codes[:5])
+        
         holland_encoded = pd.get_dummies(holland_codes)
         
-        # Encode MBTI
+        # Similar process for MBTI
         mbti_codes = []
         for idx, row in df.iterrows():
-            attention = row.get('personalityTraits', {}).get('myersBriggs', {}).get('attention', [])
-            if isinstance(attention, list) and attention:
-                mbti_codes.append(attention[0])
+            traits = row.get('personalityTraits', {})
+            if isinstance(traits, dict):
+                mbti = traits.get('myersBriggs', {})
+                if isinstance(mbti, dict):
+                    attention = mbti.get('attention', [])
+                    if isinstance(attention, list) and attention:
+                        mbti_codes.append(attention[0])
+                    else:
+                        mbti_codes.append('None')
+                else:
+                    mbti_codes.append('None')
             else:
                 mbti_codes.append('None')
+        
+        # Debug print
+        st.write("MBTI codes:", mbti_codes[:5])
+        
         mbti_encoded = pd.get_dummies(mbti_codes)
         
         # Combine features
         features = pd.concat([holland_encoded, mbti_encoded], axis=1)
+        
+        # Debug print
+        st.write("Feature columns:", features.columns.tolist())
+        
+        if features.empty or features.shape[1] == 0:
+            raise ValueError("No features available for clustering")
         
         # Perform clustering
         kmeans = KMeans(n_clusters=3, random_state=42)
@@ -84,8 +115,8 @@ def analyze_personality_clusters(df):
         
         return clusters
     except Exception as e:
-        st.error("Unable to perform personality clustering")
-        return [0] * len(df)  # Return default cluster assignments
+        st.error(f"Unable to perform personality clustering: {str(e)}")
+        return [0] * len(df)
 
 # Check password
 if check_password():
@@ -99,17 +130,15 @@ if check_password():
         data = []
         for doc in docs:
             doc_dict = doc.to_dict()
-            # Flatten nested structures
-            if 'personalInfo' in doc_dict:
-                for key, value in doc_dict['personalInfo'].items():
-                    doc_dict[f'personal_{key}'] = value
-            if 'workPreferences' in doc_dict:
-                for key, value in doc_dict['workPreferences'].items():
-                    doc_dict[f'work_{key}'] = value
-            if 'skills' in doc_dict:
-                for key, value in doc_dict['skills'].items():
-                    doc_dict[f'skills_{key}'] = value
+            # Keep original nested structure
             data.append(doc_dict)
+            
+            # Debug print
+            st.write("Sample data structure:", doc_dict.keys())
+            if 'personalityTraits' in doc_dict:
+                st.write("Personality structure:", doc_dict['personalityTraits'])
+            if 'skills' in doc_dict:
+                st.write("Skills structure:", doc_dict['skills'])
         
         return pd.DataFrame(data)
 
