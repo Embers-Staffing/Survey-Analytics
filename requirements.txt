@@ -6,4 +6,5 @@ python-dotenv
 seaborn
 scikit-learn
 numpy
-matplotlib 
+matplotlib
+statsmodels 
