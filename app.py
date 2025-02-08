@@ -457,7 +457,6 @@ if check_password():
                 
                 # Get unique roles and create node labels
                 all_roles = sorted(set(prog_df['Current Role'].unique()) | set(prog_df['Target Role'].unique()))
-                node_colors = px.colors.qualitative.Set3[:len(all_roles)]
                 
                 # Create links
                 for current in prog_df['Current Role'].unique():
@@ -474,26 +473,33 @@ if check_password():
                 # Create Sankey diagram with improved styling
                 fig = go.Figure(data=[go.Sankey(
                     node = dict(
-                        pad = 20,
-                        thickness = 30,
+                        pad = 40,  # Increased padding
+                        thickness = 25,  # Adjusted thickness
                         line = dict(color = "black", width = 0.5),
                         label = all_roles,
-                        color = node_colors
+                        color = px.colors.qualitative.Set3,  # Better color scheme
+                        font = dict(size = 14, color = "black")  # Larger, clearer font
                     ),
                     link = dict(
                         source = source,
                         target = target,
                         value = value,
-                        color = [f'rgba(44, 160, 44, {v/max(value)})' for v in value]
+                        color = [f'rgba(44, 160, 44, {v/max(value):.2f})' for v in value]  # Improved transparency
                     )
                 )])
                 
-                # Update layout
+                # Update layout for better visibility
                 fig.update_layout(
-                    title_text="Career Progression Paths",
-                    font_size=12,
-                    height=600,
-                    margin=dict(t=40, l=0, r=0, b=0)
+                    title = dict(
+                        text = "Career Progression Paths",
+                        font = dict(size=24),
+                        y = 0.95
+                    ),
+                    font_size = 14,
+                    height = 800,  # Increased height
+                    margin = dict(t=60, l=20, r=20, b=20),
+                    paper_bgcolor = 'white',
+                    plot_bgcolor = 'white'
                 )
                 
                 # Show diagram
