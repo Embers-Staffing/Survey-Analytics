@@ -115,31 +115,45 @@ if check_password():
                 st.metric("Average Years in Construction", "N/A")
         with col3:
             try:
-                role = df['skills_experience']['role'].mode()[0] if not df['skills_experience']['role'].empty else "N/A"
+                role = df['skills_experience_role'].mode()[0] if not df['skills_experience_role'].empty else "N/A"
                 st.metric("Most Common Role", role)
             except:
                 st.metric("Most Common Role", "N/A")
 
         # Basic visualizations (using seaborn)
-        st.subheader("Years in Construction Distribution")
-        fig, ax = plt.subplots(figsize=(10, 6))
-        sns.histplot(data=df, x='personal_yearsInConstruction', bins=20, ax=ax)
-        st.pyplot(fig)
+        try:
+            st.subheader("Years in Construction Distribution")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.histplot(data=df, x='personal_yearsInConstruction', bins=20, ax=ax)
+            st.pyplot(fig)
+        except:
+            st.write("No construction years data available")
 
         # Career Goals Analysis with enhanced styling
         st.header("Career Development")
         col1, col2 = st.columns(2)
         
         with col1:
-            career_goals = pd.DataFrame([goal for goals in df['careerGoals'] for goal in goals])
-            fig = px.pie(career_goals, names=0, title='Career Goals Distribution',
-                        color_discrete_sequence=px.colors.qualitative.Set3)
-            st.plotly_chart(fig, use_container_width=True)
+            try:
+                # Convert list column to individual rows
+                goals_list = []
+                for idx, row in df.iterrows():
+                    if isinstance(row.get('careerGoals'), list):
+                        goals_list.extend(row['careerGoals'])
+                career_goals = pd.DataFrame(goals_list, columns=['goal'])
+                fig = px.pie(career_goals, names='goal', title='Career Goals Distribution',
+                            color_discrete_sequence=px.colors.qualitative.Set3)
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.write("No career goals data available")
         
         with col2:
-            fig = px.pie(df, names='advancementPreference', title='Advancement Preferences',
-                        color_discrete_sequence=px.colors.qualitative.Set3)
-            st.plotly_chart(fig, use_container_width=True)
+            try:
+                fig = px.pie(df, names='advancementPreference', title='Advancement Preferences',
+                            color_discrete_sequence=px.colors.qualitative.Set3)
+                st.plotly_chart(fig, use_container_width=True)
+            except:
+                st.write("No advancement preference data available")
 
     with tab2:
         st.header("Advanced Analytics")
