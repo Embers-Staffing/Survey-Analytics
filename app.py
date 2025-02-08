@@ -45,233 +45,9 @@ st.set_page_config(
 )
 
 # Add theme selector to sidebar
-theme = st.sidebar.selectbox('Theme', ['Light', 'Dark'])
-
-# Dynamic CSS based on theme
-if theme == 'Dark':
-    st.markdown("""
-    <style>
-        /* Dark theme with improved colors */
-        .main {
-            background-color: #1E1E1E;
-            color: #E0E0E0;
-        }
-        
-        /* Headers */
-        h1, h2, h3 {
-            color: #E0E0E0 !important;
-            border-bottom-color: #333333 !important;
-        }
-        
-        /* Metrics */
-        div[data-testid="metric-container"] {
-            background-color: #2D2D2D;
-            border: 1px solid #404040;
-            color: #E0E0E0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        /* Expanders */
-        div[data-testid="stExpander"] {
-            background-color: #2D2D2D;
-            border: 1px solid #404040;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        /* Tabs */
-        .stTabs [data-baseweb="tab-list"] {
-            background-color: #2D2D2D;
-            border: 1px solid #404040;
-        }
-        
-        .stTabs [data-baseweb="tab"] {
-            color: #E0E0E0;
-        }
-        
-        .stTabs [data-baseweb="tab"]:hover {
-            background-color: #404040;
-        }
-        
-        /* Charts container */
-        div[data-testid="stHorizontalBlock"] {
-            background-color: transparent;
-        }
-        
-        /* Tables */
-        div[data-testid="stTable"] {
-            background-color: #2D2D2D;
-            color: #E0E0E0;
-            border: 1px solid #404040;
-        }
-        
-        /* Inputs */
-        div[data-baseweb="select"] {
-            background-color: #2D2D2D;
-            color: #E0E0E0;
-            border: 1px solid #404040;
-        }
-        
-        /* Sidebar */
-        section[data-testid="stSidebar"] {
-            background-color: #2D2D2D;
-            border-right: 1px solid #404040;
-        }
-        
-        /* Footer */
-        .footer {
-            background-color: #2D2D2D;
-            color: #E0E0E0;
-            border-top: 1px solid #404040;
-        }
-        
-        /* Plotly charts background */
-        .js-plotly-plot .plotly .main-svg {
-            background-color: #2D2D2D !important;
-        }
-        
-        /* DataFrames */
-        .dataframe {
-            background-color: #2D2D2D;
-            color: #E0E0E0;
-        }
-        
-        /* Info boxes */
-        div[data-testid="stAlert"] {
-            background-color: #2D2D2D;
-            color: #E0E0E0;
-            border: 1px solid #404040;
-        }
-        
-        /* Buttons */
-        button {
-            background-color: #404040 !important;
-            color: #E0E0E0 !important;
-            border: 1px solid #505050 !important;
-        }
-        
-        button:hover {
-            background-color: #505050 !important;
-            border: 1px solid #606060 !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown("""
-    <style>
-        /* Light theme */
-        .main {
-            padding: 2rem;
-            max-width: 100%;
-        }
-        
-        /* Headers */
-        h1 {
-            color: #1E3D59;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #F5F5F5;
-            margin-bottom: 2rem;
-        }
-        
-        /* Containers */
-        div[data-testid="stVerticalBlock"] > div {
-            padding: 0.5rem 0;
-        }
-        
-        /* Metrics */
-        div[data-testid="metric-container"] {
-            background-color: #F8F9FA;
-            border: 1px solid #E9ECEF;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin: 0.5rem 0;
-        }
-        
-        /* Expanders */
-        div[data-testid="stExpander"] {
-            border: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin: 1rem 0;
-            border-radius: 8px;
-        }
-        
-        /* Tabs */
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 2rem;
-            background-color: #F8F9FA;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-        
-        .stTabs [data-baseweb="tab"] {
-            height: 3rem;
-            background-color: transparent;
-            border: none;
-            color: #495057;
-            font-weight: 500;
-            padding: 0 2rem;
-        }
-        
-        /* Charts */
-        div[data-testid="stHorizontalBlock"] {
-            gap: 2rem;
-            padding: 1rem 0;
-        }
-        
-        /* Tables */
-        div[data-testid="stTable"] {
-            background-color: #FFFFFF;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        /* Inputs */
-        div[data-baseweb="select"] {
-            background-color: #FFFFFF;
-            border-radius: 4px;
-        }
-        
-        /* Footer */
-        .footer {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background-color: #F8F9FA;
-            padding: 0.5rem;
-            text-align: center;
-            border-top: 1px solid #E9ECEF;
-            font-size: 0.9rem;
-            color: #6C757D;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-# Update the footer to use the new class
-st.markdown("""
-<div class="footer">
-    Updated: {datetime.now().strftime('%Y-%m-%d')}
-</div>
-""", unsafe_allow_html=True)
-
-# Update the main title and description
-st.title("Construction Career Survey Dashboard")
-st.markdown("""
-<div style='background-color: #F8F9FA; padding: 1rem; border-radius: 8px; margin-bottom: 2rem;'>
-    This dashboard provides insights into construction career trends, skills distribution, and personality analysis
-    based on survey responses. Use the filters in the sidebar to customize your view.
-</div>
-""", unsafe_allow_html=True)
-
-# Update sidebar styling
-st.sidebar.markdown("""
-<style>
-    .sidebar .sidebar-content {
-        background-color: #F8F9FA;
-    }
-</style>
-""", unsafe_allow_html=True)
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("Use Streamlit's settings menu (⋮) to switch between light and dark mode")
 
 # Add section headers with icons and descriptions
 def section_header(icon, title, description):
@@ -1326,4 +1102,86 @@ if check_password():
                 lambda x: x.str.contains(search_term, case=False).any(), axis=1
             )]
         
-        st.dataframe(filtered_df) 
+        st.dataframe(filtered_df)
+
+# Add this at the top of your app
+st.markdown("""
+<style>
+    :root {
+        --primary-color: #2E5077;
+        --background-color: #FFFFFF;
+        --secondary-bg: #F8F9FA;
+        --text-color: #1E1E1E;
+        --border-color: #E9ECEF;
+        --shadow: 0 2px 4px rgba(0,0,0,0.05);
+        --radius: 8px;
+        --spacing: 1rem;
+    }
+
+    [data-theme="dark"] {
+        --primary-color: #4A90E2;
+        --background-color: #1E1E1E;
+        --secondary-bg: #2D2D2D;
+        --text-color: #E0E0E0;
+        --border-color: #404040;
+        --shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Components */
+    .stApp {
+        background-color: var(--background-color);
+        color: var(--text-color);
+    }
+
+    .metric-container {
+        background-color: var(--secondary-bg);
+        border: 1px solid var(--border-color);
+        padding: var(--spacing);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+
+    .card {
+        background-color: var(--secondary-bg);
+        border-radius: var(--radius);
+        padding: var(--spacing);
+        margin: var(--spacing) 0;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow);
+    }
+
+    /* Typography */
+    h1, h2, h3 {
+        color: var(--text-color);
+    }
+
+    /* Interactive elements */
+    button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    button:hover {
+        opacity: 0.9;
+    }
+
+    /* Custom classes */
+    .flex-container {
+        display: flex;
+        gap: var(--spacing);
+        margin: var(--spacing) 0;
+    }
+
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--spacing);
+        margin: var(--spacing) 0;
+    }
+</style>
+""", unsafe_allow_html=True) 
