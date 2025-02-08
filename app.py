@@ -920,13 +920,15 @@ if check_password():
                     cluster_data = []
                     for _, row in filtered_df.iterrows():
                         try:
-                            # Get numeric features
-                            years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                            # Get numeric features with default values for NaN
+                            years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0') or '0')
                             project_size = {
-                                'small': 1, 'medium': 2, 'large': 3
+                                'small': 1, 
+                                'medium': 2, 
+                                'large': 3
                             }.get(row.get('skills', {}).get('experience', {}).get('projectSize', 'small'), 1)
                             
-                            # Get personality type
+                            # Get personality type with default value
                             mbti = row.get('personalityTraits', {}).get('myersBriggs', {})
                             personality_score = sum([
                                 1 if trait[0] in ['E', 'S', 'T', 'J'] else 0
@@ -934,11 +936,13 @@ if check_password():
                                 for trait in trait_list[:1]
                             ]) if mbti else 2  # Default middle value
                             
-                            cluster_data.append({
-                                'Years': years,
-                                'Project Size': project_size,
-                                'Personality Score': personality_score
-                            })
+                            # Only add if all values are valid
+                            if not (np.isnan(years) or np.isnan(project_size) or np.isnan(personality_score)):
+                                cluster_data.append({
+                                    'Years': years,
+                                    'Project Size': project_size,
+                                    'Personality Score': personality_score
+                                })
                         except:
                             continue
                     
@@ -1243,7 +1247,6 @@ if check_password():
                         xx, yy = np.meshgrid(
                             np.arange(x_min, x_max, 0.1),
                             np.arange(y_min, y_max, 0.1)
-                        )
                         
                         # Fit a simple classifier with dynamic n_neighbors
                         clf = KNeighborsClassifier(n_neighbors=n_neighbors)
