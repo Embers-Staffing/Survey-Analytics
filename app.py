@@ -195,17 +195,28 @@ def create_sidebar_filters(df: pd.DataFrame) -> dict:
     """Create sidebar filters for the dashboard."""
     st.sidebar.header("Filters")
     
-    # Date Range Filter
+    # Date Range Filter with better error handling
     if 'submittedAt' in df.columns:
-        dates = pd.to_datetime(df['submittedAt'])
-        min_date = dates.min()
-        max_date = dates.max()
-        date_range = st.sidebar.date_input(
-            "Date Range",
-            value=(min_date, max_date),
-            min_value=min_date,
-            max_value=max_date
-        )
+        try:
+            # Convert to datetime with error handling
+            dates = pd.to_datetime(df['submittedAt'], format='ISO8601', errors='coerce')
+            valid_dates = dates.dropna()
+            
+            if not valid_dates.empty:
+                min_date = valid_dates.min()
+                max_date = valid_dates.max()
+                date_range = st.sidebar.date_input(
+                    "Date Range",
+                    value=(min_date.date(), max_date.date()),
+                    min_value=min_date.date(),
+                    max_value=max_date.date()
+                )
+            else:
+                date_range = None
+                st.sidebar.warning("No valid dates found in the data")
+        except Exception as e:
+            date_range = None
+            st.sidebar.warning("Error processing dates")
     else:
         date_range = None
     
