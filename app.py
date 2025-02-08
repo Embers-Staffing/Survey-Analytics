@@ -324,12 +324,16 @@ if check_password():
                         # Get top 3 roles with percentages
                         top_roles = sorted(role_counts.items(), key=lambda x: x[1], reverse=True)[:3]
                         
-                        # Format the display with counts and percentages
+                        # Format the display with better spacing
                         roles_text = "\n".join([
-                            f"{role}: {count} ({(count/total_responses*100):.1f}%)"
+                            f"{role.replace('-', ' ').title()}: {count} ({(count/total_responses*100):.1f}%)"
                             for role, count in top_roles
                         ])
-                        st.metric("Most Common Roles", roles_text)
+                        st.metric(
+                            "Most Common Roles",
+                            roles_text,
+                            help="Top 3 roles by number of respondents"
+                        )
                     else:
                         st.metric("Most Common Roles", "N/A")
                 except Exception as e:
@@ -1239,7 +1243,6 @@ if check_password():
                         xx, yy = np.meshgrid(
                             np.arange(x_min, x_max, 0.1),
                             np.arange(y_min, y_max, 0.1)
-                        )
                         
                         # Fit a simple classifier with dynamic n_neighbors
                         clf = KNeighborsClassifier(n_neighbors=n_neighbors)
