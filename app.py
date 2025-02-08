@@ -54,6 +54,31 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Add Survey Button
+st.markdown("""
+<style>
+.survey-button {
+    position: fixed;
+    right: 20px;
+    top: 60px;
+    background-color: #FF4B4B;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 500;
+    z-index: 999;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.survey-button:hover {
+    background-color: #FF3333;
+    color: white;
+    text-decoration: none;
+}
+</style>
+<a href="https://career-survey.netlify.app" target="_blank" class="survey-button">Take the Survey</a>
+""", unsafe_allow_html=True)
+
 # Add section headers with icons and descriptions
 def section_header(icon, title, description):
     st.markdown(f"""
