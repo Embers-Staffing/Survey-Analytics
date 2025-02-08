@@ -71,8 +71,4 @@ This dashboard provides insights into construction industry career paths, skills
 
 ## License
 
-Copyright © 2025 Embers Staffing Solutions. All rights reserved.
-
-## Contact
-
-For support or inquiries, contact [support@embersstaffing.com](mailto:support@embersstaffing.com) 
+Copyright © 2025 Embers Staffing Solutions. All rights reserved. 
