@@ -61,24 +61,26 @@ st.markdown("""
     position: fixed;
     right: 30px;
     top: 75px;
-    background-color: #1E67C7;  /* Changed to a professional blue */
-    color: white;
+    background-color: #1E67C7;  /* Professional blue */
+    color: white !important;  /* Force white text */
     padding: 12px 24px;
-    text-decoration: none !important;  /* Remove underline */
+    text-decoration: none !important;
     border-radius: 25px;
-    font-weight: 700;  /* Made text bolder */
+    font-weight: 700;
     font-size: 16px;
     z-index: 999;
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     transition: all 0.3s ease;
     border: 2px solid #1E67C7;
+    opacity: 1 !important;  /* Ensure full opacity */
 }
 .survey-button:hover {
-    background-color: white;
-    color: #1E67C7;
+    background-color: #ffffff;
+    color: #1E67C7 !important;  /* Force blue text on hover */
     box-shadow: 0 6px 12px rgba(0,0,0,0.15);
     transform: translateY(-2px);
     text-decoration: none !important;
+    opacity: 1 !important;
 }
 </style>
 <a href="https://career-survey.netlify.app" target="_blank" class="survey-button">TAKE THE SURVEY</a>
