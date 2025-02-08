@@ -941,33 +941,44 @@ if check_password():
                     cluster_data = []
                     for _, row in filtered_df.iterrows():
                         try:
-                            # Get numeric features with default values for NaN
-                            years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0') or '0')
-                            project_size = {
-                                'small': 1, 
-                                'medium': 2, 
+                            # Get numeric features with strict validation
+                            years_str = str(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                            years = float(''.join(c for c in years_str if c.isdigit()) or '0')
+                            
+                            project_size_map = {
+                                'small': 1,
+                                'medium': 2,
                                 'large': 3
-                            }.get(row.get('skills', {}).get('experience', {}).get('projectSize', 'small'), 1)
+                            }
+                            project_size = project_size_map.get(
+                                row.get('skills', {}).get('experience', {}).get('projectSize', 'small'),
+                                1  # Default to small if missing
+                            )
                             
-                            # Get personality type with default value
+                            # Get personality type with validation
                             mbti = row.get('personalityTraits', {}).get('myersBriggs', {})
-                            personality_score = sum([
-                                1 if trait[0] in ['E', 'S', 'T', 'J'] else 0
-                                for trait_list in mbti.values()
-                                for trait in trait_list[:1]
-                            ]) if mbti else 2  # Default middle value
+                            if not isinstance(mbti, dict):
+                                mbti = {}
                             
-                            # Only add if all values are valid
-                            if not (np.isnan(years) or np.isnan(project_size) or np.isnan(personality_score)):
+                            # Calculate personality score with defaults
+                            personality_score = 0
+                            for trait_type in ['attention', 'information', 'decisions', 'lifestyle']:
+                                trait_list = mbti.get(trait_type, [''])
+                                if trait_list and isinstance(trait_list, list):
+                                    trait = trait_list[0]
+                                    personality_score += 1 if trait in ['E', 'S', 'T', 'J'] else 0
+                            
+                            # Only add if we have valid numeric values
+                            if years >= 0 and project_size in [1, 2, 3]:
                                 cluster_data.append({
                                     'Years': years,
                                     'Project Size': project_size,
                                     'Personality Score': personality_score
                                 })
-                        except:
-                            continue
+                        except Exception as e:
+                            continue  # Skip invalid entries
                     
-                    if cluster_data:
+                    if len(cluster_data) >= 3:  # Only proceed if we have enough valid data
                         cluster_df = pd.DataFrame(cluster_data)
                         
                         # Standardize features
