@@ -86,4 +86,16 @@ This dashboard provides insights into construction industry career paths, skills
 
 ## License
 
-Copyright © 2025 Embers Staffing Solutions. All rights reserved. 
+Copyright © 2025 Embers Staffing Solutions. All rights reserved.
+
+## Deployment
+
+1. Copy `.streamlit/secrets.example.toml` to `.streamlit/secrets.toml`
+2. Add your credentials to `.streamlit/secrets.toml`
+3. For Streamlit Cloud deployment, add these secrets in your app settings:
+   ```toml
+   password = "9aba7500"
+   
+   [firebase]
+   # ... your firebase credentials
+   ``` 
