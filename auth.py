@@ -46,9 +46,12 @@ def check_password():
         
         .login-title {
             text-align: center;
-            font-size: 1.2em;
-            color: #333;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #1E67C7;
             margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .custom-input {
