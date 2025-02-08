@@ -171,13 +171,6 @@ def section_header(icon, title, description):
     </div>
     """, unsafe_allow_html=True)
 
-# Update tabs with better organization
-tabs = st.tabs([
-    "Overview",
-    "Analytics",
-    "Data"
-])
-
 # Add loading spinners and progress bars
 with st.spinner("Loading data..."):
     # Your existing data loading code...
