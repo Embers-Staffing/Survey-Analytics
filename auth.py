@@ -6,14 +6,18 @@ def check_password():
     def password_entered():
         """Checks whether a password entered by the user is correct."""
         try:
+            # Temporary debug info
+            st.write("Available secrets:", st.secrets.keys())
+            st.write("Password in session:", "password" in st.session_state)
+            
             if st.session_state["password"] == st.secrets["password"]:
                 st.session_state["password_correct"] = True
                 del st.session_state["password"]
             else:
                 st.session_state["password_correct"] = False
                 st.error("😕 Password incorrect")
-        except KeyError:
-            st.error("Password configuration error. Please try again later.")
+        except Exception as e:
+            st.error(f"Configuration error: {str(e)}")
             return False
 
     if "password_correct" not in st.session_state:
