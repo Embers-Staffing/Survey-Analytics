@@ -39,22 +39,8 @@ This dashboard provides insights into construction industry career paths, skills
 3. Configure Firebase:
    - Create a Firebase project
    - Set up Firestore database
-   - Create `.streamlit/secrets.toml` with the following structure:
-     ```toml
-     password = "your_dashboard_password"
-     
-     [firebase]
-     type = "service_account"
-     project_id = "your_project_id"
-     private_key_id = "your_private_key_id"
-     private_key = "your_private_key"
-     client_email = "your_client_email"
-     client_id = "your_client_id"
-     auth_uri = "https://accounts.google.com/o/oauth2/auth"
-     token_uri = "https://oauth2.googleapis.com/token"
-     auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
-     client_x509_cert_url = "your_client_cert_url"
-     ```
+   - Create `.streamlit/secrets.toml` using the example template
+   - Add your Firebase credentials and dashboard password
 
 4. Run the application:
    ```bash
@@ -92,10 +78,4 @@ Copyright © 2025 Embers Staffing Solutions. All rights reserved.
 
 1. Copy `.streamlit/secrets.example.toml` to `.streamlit/secrets.toml`
 2. Add your credentials to `.streamlit/secrets.toml`
-3. For Streamlit Cloud deployment, add these secrets in your app settings:
-   ```toml
-   password = "9aba7500"
-   
-   [firebase]
-   # ... your firebase credentials
-   ``` 
+3. For Streamlit Cloud deployment, add your secrets in the app settings 
