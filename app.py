@@ -397,6 +397,92 @@ def show_overview_tab(filtered_df):
             except Exception as e:
                 st.write("Error displaying preferences chart")
 
+    # Career Path Analysis
+    st.subheader("Career Path Analysis")
+    try:
+        # Create role progression data
+        role_progression = []
+        for _, row in filtered_df.iterrows():
+            try:
+                years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                current_role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                target_roles = row.get('workPreferences', {}).get('roles', ['Unknown'])
+                target_role = target_roles[0] if target_roles else 'Unknown'
+                salary_level = row.get('goals', {}).get('targetSalary', 'entry')
+                
+                # Clean up role names
+                current_role = current_role.replace('-', ' ').title()
+                target_role = target_role.replace('-', ' ').title()
+                
+                role_progression.append({
+                    'Current Role': current_role,
+                    'Target Role': target_role,
+                    'Salary Level': salary_level.title()
+                })
+            except:
+                continue
+        
+        if role_progression:
+            # Create Sankey diagram
+            prog_df = pd.DataFrame(role_progression)
+            fig = go.Figure(data=[go.Sankey(
+                node = dict(
+                    pad = 15,
+                    thickness = 20,
+                    line = dict(color = "black", width = 0.5),
+                    label = list(set(prog_df['Current Role'].unique()).union(
+                               prog_df['Target Role'].unique()).union(
+                               prog_df['Salary Level'].unique())),
+                    color = "lightblue"
+                ),
+                link = dict(
+                    source = [prog_df['Current Role'].unique().tolist().index(x) for x in prog_df['Current Role']] +
+                            [len(prog_df['Current Role'].unique()) + prog_df['Target Role'].unique().tolist().index(x) 
+                             for x in prog_df['Target Role']],
+                    target = [len(prog_df['Current Role'].unique()) + prog_df['Target Role'].unique().tolist().index(x) 
+                             for x in prog_df['Target Role']] +
+                            [len(prog_df['Current Role'].unique()) + len(prog_df['Target Role'].unique()) + 
+                             prog_df['Salary Level'].unique().tolist().index(x) for x in prog_df['Salary Level']],
+                    value = [1] * (len(prog_df) * 2)
+                )
+            )])
+            
+            fig.update_layout(title_text="Career Progression Flow")
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No career progression data available")
+            
+    except Exception as e:
+        st.error(f"Error displaying career progression: {str(e)}")
+
+    # Skills Analysis
+    st.subheader("Skills Distribution")
+    try:
+        # Extract technical skills
+        all_skills = []
+        for _, row in filtered_df.iterrows():
+            skills = row.get('skills', {}).get('technical', [])
+            if isinstance(skills, list):
+                all_skills.extend(skills)
+        
+        if all_skills:
+            skills_df = pd.DataFrame(all_skills, columns=['Skill'])
+            
+            # Create bar chart
+            fig = px.bar(
+                skills_df['Skill'].value_counts().reset_index(),
+                x='index',
+                y='Skill',
+                title='Technical Skills Distribution',
+                labels={'index': 'Skill', 'Skill': 'Count'}
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No skills data available")
+            
+    except Exception as e:
+        st.error(f"Error displaying skills distribution: {str(e)}")
+
 def show_analytics_tab(filtered_df):
     """Display the Analytics tab content."""
     st.markdown("### Advanced Analytics")
