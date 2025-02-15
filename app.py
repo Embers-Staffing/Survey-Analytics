@@ -308,26 +308,8 @@ def apply_filters(df, filters):
 
 def show_overview_tab(filtered_df):
     """Display the Overview tab content."""
-    # Debug info
-    st.write("Data shape:", filtered_df.shape)
-    st.write("Columns:", filtered_df.columns.tolist())
+    st.markdown("### Survey Overview")
     
-    # Sample data structure
-    if not filtered_df.empty:
-        st.write("Sample data structure:")
-        sample_row = filtered_df.iloc[0].to_dict()
-        st.json(sample_row)
-    
-    # Check nested structures
-    st.write("Data validation:")
-    data_checks = {
-        "Skills data": sum([1 for row in filtered_df.itertuples() if isinstance(getattr(row, 'skills', None), dict)]),
-        "Goals data": sum([1 for row in filtered_df.itertuples() if isinstance(getattr(row, 'goals', None), dict)]),
-        "Personality data": sum([1 for row in filtered_df.itertuples() if isinstance(getattr(row, 'personalityTraits', None), dict)]),
-        "Work preferences": sum([1 for row in filtered_df.itertuples() if isinstance(getattr(row, 'workPreferences', None), dict)])
-    }
-    st.write(data_checks)
-
     # Key Metrics
     with st.container():
         st.subheader("Key Metrics")
@@ -355,7 +337,6 @@ def show_overview_tab(filtered_df):
                     st.metric("Average Years in Construction", "N/A")
             except Exception as e:
                 st.metric("Average Years in Construction", "N/A")
-                st.error(f"Years calculation error: {str(e)}")
         
         with metrics_col3:
             try:
@@ -372,7 +353,6 @@ def show_overview_tab(filtered_df):
                     st.metric("Most Common Role", "N/A")
             except Exception as e:
                 st.metric("Most Common Role", "N/A")
-                st.error(f"Role calculation error: {str(e)}")
 
     # Career Development
     with st.expander("Career Development Analysis", expanded=True):
