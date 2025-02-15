@@ -520,12 +520,24 @@ def show_analytics_tab(filtered_df):
                         mbti_data.append(mbti_type)
             
             if mbti_data:
-                mbti_df = pd.DataFrame(mbti_data, columns=['Type'])
-                fig = px.pie(mbti_df['Type'].value_counts().reset_index(),
-                           values='Type',
-                           names='index',
-                           title='MBTI Type Distribution')
+                # Create DataFrame with value counts
+                mbti_counts = pd.DataFrame(
+                    pd.Series(mbti_data).value_counts()
+                ).reset_index()
+                mbti_counts.columns = ['MBTI Type', 'Count']  # Rename columns
+                
+                # Create pie chart
+                fig = px.pie(
+                    mbti_counts,
+                    values='Count',
+                    names='MBTI Type',
+                    title='MBTI Type Distribution'
+                )
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # Show type breakdown
+                st.write("### MBTI Type Breakdown")
+                st.dataframe(mbti_counts)
             else:
                 st.info("No personality data available")
                 
