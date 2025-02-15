@@ -306,62 +306,6 @@ def apply_filters(df, filters):
     
     return filtered_df
 
-# Load data
-with st.spinner("Loading survey data..."):
-    df = get_survey_data()
-
-# Create and apply filters
-filters = create_sidebar_filters(df)
-filtered_df = df.copy()  # Default fallback
-
-try:
-    filtered_df = apply_filters(df, filters)
-except Exception as e:
-    st.error(f"Error applying filters: {str(e)}")
-
-# Create tabs
-tabs = st.tabs(["Overview", "Analytics", "Data"])
-
-# Tab content
-with tabs[0]:  # Overview Tab
-    try:
-        show_overview_tab(filtered_df)
-    except Exception as e:
-        st.error(f"Error in Overview tab: {str(e)}")
-
-with tabs[1]:  # Analytics Tab
-    try:
-        show_analytics_tab(filtered_df)
-    except Exception as e:
-        st.error(f"Error in Analytics tab: {str(e)}")
-
-with tabs[2]:  # Data Tab
-    try:
-        show_data_tab(filtered_df)
-    except Exception as e:
-        st.error(f"Error in Data tab: {str(e)}")
-
-# Add footer
-st.markdown("""
-<style>
-.footer {
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    background-color: #f8f9fa;
-    color: #6c757d;
-    text-align: center;
-    padding: 10px;
-    font-size: 14px;
-    border-top: 1px solid #dee2e6;
-}
-</style>
-<div class="footer">
-    <p>© Embers Staffing 2025 | Built by <a href="https://github.com/ArsCodeAmatoria" target="_blank">ArsCodeAmatoria</a></p>
-</div>
-""", unsafe_allow_html=True)
-
 def show_overview_tab(filtered_df):
     """Display the Overview tab content."""
     st.markdown("### Survey Overview")
@@ -450,4 +394,60 @@ def show_data_tab(filtered_df):
             lambda x: x.str.contains(search_term, case=False).any(), axis=1
         )]
     
-    st.dataframe(filtered_df) 
+    st.dataframe(filtered_df)
+
+# Then: Main code
+with st.spinner("Loading survey data..."):
+    df = get_survey_data()
+
+# Create and apply filters
+filters = create_sidebar_filters(df)
+filtered_df = df.copy()
+
+try:
+    filtered_df = apply_filters(df, filters)
+except Exception as e:
+    st.error(f"Error applying filters: {str(e)}")
+
+# Create tabs
+tabs = st.tabs(["Overview", "Analytics", "Data"])
+
+# Tab content
+with tabs[0]:
+    try:
+        show_overview_tab(filtered_df)
+    except Exception as e:
+        st.error(f"Error in Overview tab: {str(e)}")
+
+with tabs[1]:
+    try:
+        show_analytics_tab(filtered_df)
+    except Exception as e:
+        st.error(f"Error in Analytics tab: {str(e)}")
+
+with tabs[2]:
+    try:
+        show_data_tab(filtered_df)
+    except Exception as e:
+        st.error(f"Error in Data tab: {str(e)}")
+
+# Add footer
+st.markdown("""
+<style>
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+    border-top: 1px solid #dee2e6;
+}
+</style>
+<div class="footer">
+    <p>© Embers Staffing 2025 | Built by <a href="https://github.com/ArsCodeAmatoria" target="_blank">ArsCodeAmatoria</a></p>
+</div>
+""", unsafe_allow_html=True) 
