@@ -2,7 +2,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Visualization imports
 import plotly.express as px
@@ -173,32 +173,41 @@ def get_survey_data():
     try:
         responses_ref = db.collection('responses')
         docs = responses_ref.stream()
-        
-        # Add debug info
         data = []
         count = 0
         latest_date = None
         
         for doc in docs:
             doc_data = doc.to_dict()
+            
+            # Convert submittedAt to UTC timezone
+            if 'submittedAt' in doc_data:
+                try:
+                    # Parse the ISO format date and localize to UTC
+                    submission_date = pd.to_datetime(doc_data['submittedAt']).tz_localize('UTC')
+                    doc_data['submittedAt'] = submission_date
+                    
+                    # Track latest submission
+                    if latest_date is None or submission_date > latest_date:
+                        latest_date = submission_date
+                except:
+                    # If date parsing fails, skip updating the date
+                    pass
+            
             data.append(doc_data)
             count += 1
-            
-            # Track latest submission
-            if 'submittedAt' in doc_data:
-                submission_date = pd.to_datetime(doc_data['submittedAt'])
-                if latest_date is None or submission_date > latest_date:
-                    latest_date = submission_date
         
-        # Print detailed debug info
+        # Show stats in sidebar
         st.sidebar.markdown("### Database Stats")
         st.sidebar.markdown(f"**Total Responses:** {count}")
-        st.sidebar.markdown(f"**Latest Submission:** {latest_date.strftime('%Y-%m-%d %H:%M:%S') if latest_date else 'None'}")
-        st.sidebar.markdown(f"**Last Checked:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        if latest_date:
+            st.sidebar.markdown(f"**Latest Submission:** {latest_date.strftime('%Y-%m-%d %H:%M:%S')} UTC")
+        st.sidebar.markdown(f"**Last Checked:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC")
         
         return pd.DataFrame(data)
+        
     except Exception as e:
-        st.sidebar.error(f"Error fetching data: {str(e)}")
+        st.error(f"Error fetching data: {str(e)}")
         return pd.DataFrame()
 
 def create_sidebar_filters(df: pd.DataFrame) -> dict:
