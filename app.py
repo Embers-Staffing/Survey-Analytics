@@ -726,8 +726,15 @@ st.markdown("""
     font-size: 14px;
     border-top: 1px solid #dee2e6;
 }
+.footer a {
+    color: #1E67C7;
+    text-decoration: none;
+}
+.footer a:hover {
+    text-decoration: underline;
+}
 </style>
 <div class="footer">
-    <p>© Embers Staffing 2025 | Built by <a href="https://github.com/ArsCodeAmatoria" target="_blank">ArsCodeAmatoria</a></p>
+    <p>© Embers Staffing 2025 | Built by <a href="https://bigfootcrane.com/" target="_blank">Bigfoot Crane</a></p>
 </div>
 """, unsafe_allow_html=True) 
