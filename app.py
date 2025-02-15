@@ -323,8 +323,8 @@ except Exception as e:
 # Create tabs
 tabs = st.tabs(["Overview", "Analytics", "Data"])
 
-# Tab content
-with tabs[0]:  # Overview Tab
+# Overview Tab
+with tabs[0]:
     try:
         st.markdown("### Survey Overview")
         st.markdown("""
@@ -891,7 +891,8 @@ with tabs[0]:  # Overview Tab
     except Exception as e:
         st.error(f"Error in Overview tab: {str(e)}")
 
-with tabs[1]:  # Analytics Tab
+# Analytics Tab
+with tabs[1]:
     try:
         st.markdown("### Advanced Analytics")
         
@@ -1419,7 +1420,8 @@ with tabs[1]:  # Analytics Tab
     except Exception as e:
         st.error(f"Error in Analytics tab: {str(e)}")
 
-with tabs[2]:  # Data Tab
+# Data Tab
+with tabs[2]:
     try:
         st.markdown("### Raw Data Explorer")
         
