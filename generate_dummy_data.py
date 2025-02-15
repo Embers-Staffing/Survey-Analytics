@@ -5,36 +5,22 @@ from datetime import datetime, timedelta
 import streamlit as st
 import json
 
-# Get credentials from Streamlit secrets and save to file
-creds = {
-    "type": st.secrets["firebase"]["type"],
-    "project_id": st.secrets["firebase"]["project_id"],
-    "private_key_id": st.secrets["firebase"]["private_key_id"],
-    "private_key": st.secrets["firebase"]["private_key"],
-    "client_email": st.secrets["firebase"]["client_email"],
-    "client_id": st.secrets["firebase"]["client_id"],
-    "auth_uri": st.secrets["firebase"]["auth_uri"],
-    "token_uri": st.secrets["firebase"]["token_uri"],
-    "auth_provider_x509_cert_url": st.secrets["firebase"]["auth_provider_x509_cert_url"],
-    "client_x509_cert_url": st.secrets["firebase"]["client_x509_cert_url"]
-}
-
-# Save credentials to file
-with open('firebase-credentials.json', 'w') as f:
-    json.dump(creds, f, indent=4)
-
 # Initialize Firebase
-try:
-    if not firebase_admin._apps:
-        cred = credentials.Certificate('firebase-credentials.json')
-        firebase_admin.initialize_app(cred)
-    
-    db = firestore.client()
-    print("Successfully connected to Firebase!")
-
-except Exception as e:
-    print(f"Error initializing Firebase: {str(e)}")
-    exit(1)
+if not firebase_admin._apps:
+    # Use Firebase credentials from secrets
+    cred = credentials.Certificate({
+        "type": st.secrets["firebase"]["type"],
+        "project_id": st.secrets["firebase"]["project_id"],
+        "private_key_id": st.secrets["firebase"]["private_key_id"],
+        "private_key": st.secrets["firebase"]["private_key"],
+        "client_email": st.secrets["firebase"]["client_email"],
+        "client_id": st.secrets["firebase"]["client_id"],
+        "auth_uri": st.secrets["firebase"]["auth_uri"],
+        "token_uri": st.secrets["firebase"]["token_uri"],
+        "auth_provider_x509_cert_url": st.secrets["firebase"]["auth_provider_x509_cert_url"],
+        "client_x509_cert_url": st.secrets["firebase"]["client_x509_cert_url"]
+    })
+    firebase_admin.initialize_app(cred)
 
 # Sample data for generating realistic responses
 ROLES = ['project-manager', 'site-supervisor', 'engineer', 'architect', 'estimator', 'safety-manager']
@@ -100,6 +86,7 @@ def generate_dummy_response():
 
 def upload_dummy_data(num_responses=100):
     """Generate and upload dummy responses to Firebase."""
+    db = firestore.client()
     responses_ref = db.collection('responses')
     
     for _ in range(num_responses):
