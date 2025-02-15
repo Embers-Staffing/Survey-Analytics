@@ -316,7 +316,11 @@ with st.spinner("Loading survey data..."):
 filters = create_sidebar_filters(df)
 
 # Apply filters
-filtered_df = apply_filters(df, filters)
+try:
+    filtered_df = apply_filters(df, filters)
+except Exception as e:
+    st.error(f"Error applying filters: {str(e)}")
+    filtered_df = df
 
 # Dashboard Tabs with better styling and organization
 st.markdown("""
