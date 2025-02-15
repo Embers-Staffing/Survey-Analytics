@@ -351,4 +351,94 @@ st.markdown("""
 <div class="footer">
     <p>© Embers Staffing 2025 | Built by <a href="https://github.com/ArsCodeAmatoria" target="_blank">ArsCodeAmatoria</a></p>
 </div>
-""", unsafe_allow_html=True) 
+""", unsafe_allow_html=True)
+
+def show_overview_tab(filtered_df):
+    """Display the Overview tab content."""
+    st.markdown("### Survey Overview")
+    
+    # Key Metrics
+    with st.container():
+        st.subheader("Key Metrics")
+        metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
+        
+        with metrics_col1:
+            st.metric(
+                "Total Responses",
+                len(filtered_df),
+                delta=None
+            )
+        
+        with metrics_col2:
+            try:
+                years_list = []
+                for _, row in filtered_df.iterrows():
+                    years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                    if years > 0:
+                        years_list.append(years)
+                
+                if years_list:
+                    years_mean = round(sum(years_list) / len(years_list), 1)
+                    st.metric("Average Years in Construction", years_mean)
+                else:
+                    st.metric("Average Years in Construction", "N/A")
+            except Exception as e:
+                st.metric("Average Years in Construction", "N/A")
+        
+        with metrics_col3:
+            try:
+                roles = []
+                for _, row in filtered_df.iterrows():
+                    role = row.get('skills', {}).get('experience', {}).get('role')
+                    if role:
+                        roles.append(role)
+                
+                if roles:
+                    most_common = max(set(roles), key=roles.count)
+                    st.metric("Most Common Role", most_common.replace('-', ' ').title())
+                else:
+                    st.metric("Most Common Role", "N/A")
+            except Exception as e:
+                st.metric("Most Common Role", "N/A")
+
+def show_analytics_tab(filtered_df):
+    """Display the Analytics tab content."""
+    st.markdown("### Advanced Analytics")
+    
+    analysis_type = st.radio(
+        "Select Analysis Type",
+        ["Personality Clusters", "Career Progression", "Skills Analysis"],
+        horizontal=True
+    )
+    
+    if analysis_type == "Personality Clusters":
+        # Personality analysis code...
+        pass
+    elif analysis_type == "Career Progression":
+        # Career progression code...
+        pass
+    else:  # Skills Analysis
+        # Skills analysis code...
+        pass
+
+def show_data_tab(filtered_df):
+    """Display the Data tab content."""
+    st.markdown("### Raw Data Explorer")
+    
+    # Add data download button
+    csv = filtered_df.to_csv(index=False)
+    st.download_button(
+        label="Download Data as CSV",
+        data=csv,
+        file_name="survey_data.csv",
+        mime="text/csv",
+    )
+    
+    # Add search/filter options
+    search_term = st.text_input("Search in data")
+    if search_term:
+        filtered_df = filtered_df[filtered_df.astype(str).apply(
+            lambda x: x.str.contains(search_term, case=False).any(), axis=1
+        )]
+    
+    st.dataframe(filtered_df) 
