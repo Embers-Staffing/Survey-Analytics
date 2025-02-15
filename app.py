@@ -606,14 +606,14 @@ with tabs[0]:
         # Skills Analysis
         with st.expander("Skills Analysis", expanded=True):
             st.subheader("Technical Skills and Experience")
+            
+            # Extract technical skills
+            all_skills = []
             try:
-                # Extract technical skills
-                all_skills = [
-                    skill 
-                    for _, row in filtered_df.iterrows()
-                    for skill in row.get('skills', {}).get('technical', [])
-                    if isinstance(row.get('skills', {}), dict)
-                ]
+                for _, row in filtered_df.iterrows():
+                    skills = row.get('skills', {}).get('technical', [])
+                    if isinstance(skills, list):
+                        all_skills.extend(skills)
                 
                 if all_skills:
                     skills_df = pd.DataFrame(all_skills, columns=['Skill'])
