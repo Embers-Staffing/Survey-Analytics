@@ -506,8 +506,9 @@ def show_analytics_tab(filtered_df):
     
     if analysis_type == "Personality Clusters":
         st.subheader("Personality Type Analysis")
+        
+        # MBTI Distribution
         try:
-            # Extract MBTI data
             mbti_data = []
             for _, row in filtered_df.iterrows():
                 traits = row.get('personalityTraits', {}).get('myersBriggs', {})
@@ -520,34 +521,40 @@ def show_analytics_tab(filtered_df):
                         mbti_data.append(mbti_type)
             
             if mbti_data:
-                # Create DataFrame with value counts
-                mbti_counts = pd.DataFrame(
-                    pd.Series(mbti_data).value_counts()
-                ).reset_index()
-                mbti_counts.columns = ['MBTI Type', 'Count']  # Rename columns
+                mbti_counts = pd.DataFrame(pd.Series(mbti_data).value_counts()).reset_index()
+                mbti_counts.columns = ['MBTI Type', 'Count']
                 
-                # Create pie chart
-                fig = px.pie(
-                    mbti_counts,
-                    values='Count',
-                    names='MBTI Type',
-                    title='MBTI Type Distribution'
-                )
-                st.plotly_chart(fig, use_container_width=True)
+                # Pie chart
+                fig1 = px.pie(mbti_counts, values='Count', names='MBTI Type', title='MBTI Type Distribution')
+                st.plotly_chart(fig1, use_container_width=True)
                 
-                # Show type breakdown
-                st.write("### MBTI Type Breakdown")
-                st.dataframe(mbti_counts)
-            else:
-                st.info("No personality data available")
+                # Bar chart
+                fig2 = px.bar(mbti_counts, x='MBTI Type', y='Count', title='MBTI Type Breakdown')
+                st.plotly_chart(fig2, use_container_width=True)
+            
+            # Holland Code Distribution
+            holland_data = []
+            for _, row in filtered_df.iterrows():
+                codes = row.get('personalityTraits', {}).get('hollandCode', [])
+                if isinstance(codes, list) and codes:
+                    holland_data.extend(codes)
+            
+            if holland_data:
+                holland_counts = pd.DataFrame(pd.Series(holland_data).value_counts()).reset_index()
+                holland_counts.columns = ['Holland Code', 'Count']
                 
+                fig3 = px.pie(holland_counts, values='Count', names='Holland Code', 
+                            title='Holland Code Distribution')
+                st.plotly_chart(fig3, use_container_width=True)
+        
         except Exception as e:
-            st.error(f"Error analyzing personality data: {str(e)}")
+            st.error(f"Error in personality analysis: {str(e)}")
     
     elif analysis_type == "Career Progression":
         st.subheader("Career Progression Analysis")
+        
         try:
-            # Create experience vs role chart
+            # Experience vs Role Box Plot
             exp_data = []
             for _, row in filtered_df.iterrows():
                 years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
@@ -560,48 +567,92 @@ def show_analytics_tab(filtered_df):
             
             if exp_data:
                 exp_df = pd.DataFrame(exp_data)
-                fig = px.box(exp_df,
-                           x='Role',
-                           y='Years',
-                           title='Years of Experience by Role')
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No career progression data available")
+                fig1 = px.box(exp_df, x='Role', y='Years', title='Years of Experience by Role')
+                st.plotly_chart(fig1, use_container_width=True)
+            
+            # Career Path Sankey
+            path_data = []
+            for _, row in filtered_df.iterrows():
+                current = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                target = row.get('workPreferences', {}).get('roles', ['Unknown'])[0]
+                salary = row.get('goals', {}).get('targetSalary', 'entry')
                 
+                if current != 'Unknown' and target != 'Unknown':
+                    path_data.append({
+                        'Current': current.replace('-', ' ').title(),
+                        'Target': target.replace('-', ' ').title(),
+                        'Salary': salary.title()
+                    })
+            
+            if path_data:
+                path_df = pd.DataFrame(path_data)
+                fig2 = go.Figure(data=[go.Sankey(
+                    node=dict(
+                        pad=15,
+                        thickness=20,
+                        line=dict(color="black", width=0.5),
+                        label=list(set(path_df['Current'].unique()).union(
+                               path_df['Target'].unique()).union(
+                               path_df['Salary'].unique())),
+                        color="lightblue"
+                    ),
+                    link=dict(
+                        source=[path_df['Current'].unique().tolist().index(x) for x in path_df['Current']] +
+                               [len(path_df['Current'].unique()) + path_df['Target'].unique().tolist().index(x) 
+                                for x in path_df['Target']],
+                        target=[len(path_df['Current'].unique()) + path_df['Target'].unique().tolist().index(x) 
+                               for x in path_df['Target']] +
+                               [len(path_df['Current'].unique()) + len(path_df['Target'].unique()) + 
+                                path_df['Salary'].unique().tolist().index(x) for x in path_df['Salary']],
+                        value=[1] * (len(path_df) * 2)
+                    )
+                )])
+                fig2.update_layout(title_text="Career Path Flow")
+                st.plotly_chart(fig2, use_container_width=True)
+        
         except Exception as e:
-            st.error(f"Error analyzing career progression: {str(e)}")
+            st.error(f"Error in career progression analysis: {str(e)}")
     
     else:  # Skills Analysis
         st.subheader("Skills Analysis")
         try:
-            # Create skills correlation matrix
+            # Skills Distribution
             skills_data = []
             for _, row in filtered_df.iterrows():
                 skills = row.get('skills', {}).get('technical', [])
                 if isinstance(skills, list):
-                    skills_data.append(skills)
+                    skills_data.extend(skills)
             
             if skills_data:
-                # Create co-occurrence matrix
-                all_skills = list(set([skill for skills in skills_data for skill in skills]))
+                skills_counts = pd.DataFrame(pd.Series(skills_data).value_counts()).reset_index()
+                skills_counts.columns = ['Skill', 'Count']
+                
+                # Bar chart
+                fig1 = px.bar(skills_counts, x='Skill', y='Count', 
+                            title='Skills Distribution')
+                fig1.update_layout(xaxis_tickangle=-45)
+                st.plotly_chart(fig1, use_container_width=True)
+                
+                # Skills correlation heatmap
+                all_skills = list(set(skills_data))
                 matrix = np.zeros((len(all_skills), len(all_skills)))
                 
-                for skills in skills_data:
-                    for i, skill1 in enumerate(all_skills):
-                        for j, skill2 in enumerate(all_skills):
-                            if skill1 in skills and skill2 in skills:
-                                matrix[i, j] += 1
+                for _, row in filtered_df.iterrows():
+                    skills = row.get('skills', {}).get('technical', [])
+                    if isinstance(skills, list):
+                        for i, skill1 in enumerate(all_skills):
+                            for j, skill2 in enumerate(all_skills):
+                                if skill1 in skills and skill2 in skills:
+                                    matrix[i, j] += 1
                 
-                fig = px.imshow(matrix,
-                              x=all_skills,
-                              y=all_skills,
-                              title="Skills Co-occurrence Matrix")
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("No skills data available")
-                
+                fig2 = px.imshow(matrix,
+                               x=all_skills,
+                               y=all_skills,
+                               title="Skills Co-occurrence Matrix")
+                st.plotly_chart(fig2, use_container_width=True)
+        
         except Exception as e:
-            st.error(f"Error analyzing skills: {str(e)}")
+            st.error(f"Error in skills analysis: {str(e)}")
 
 def show_data_tab(filtered_df):
     """Display the Data tab content."""
