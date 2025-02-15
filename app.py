@@ -505,14 +505,91 @@ def show_analytics_tab(filtered_df):
     )
     
     if analysis_type == "Personality Clusters":
-        # Personality analysis code...
-        pass
+        st.subheader("Personality Type Analysis")
+        try:
+            # Extract MBTI data
+            mbti_data = []
+            for _, row in filtered_df.iterrows():
+                traits = row.get('personalityTraits', {}).get('myersBriggs', {})
+                if isinstance(traits, dict):
+                    mbti_type = ''
+                    for trait in ['attention', 'information', 'decisions', 'lifestyle']:
+                        if trait in traits and traits[trait]:
+                            mbti_type += traits[trait][0]
+                    if len(mbti_type) == 4:
+                        mbti_data.append(mbti_type)
+            
+            if mbti_data:
+                mbti_df = pd.DataFrame(mbti_data, columns=['Type'])
+                fig = px.pie(mbti_df['Type'].value_counts().reset_index(),
+                           values='Type',
+                           names='index',
+                           title='MBTI Type Distribution')
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No personality data available")
+                
+        except Exception as e:
+            st.error(f"Error analyzing personality data: {str(e)}")
+    
     elif analysis_type == "Career Progression":
-        # Career progression code...
-        pass
+        st.subheader("Career Progression Analysis")
+        try:
+            # Create experience vs role chart
+            exp_data = []
+            for _, row in filtered_df.iterrows():
+                years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                if role != 'Unknown':
+                    exp_data.append({
+                        'Role': role.replace('-', ' ').title(),
+                        'Years': years
+                    })
+            
+            if exp_data:
+                exp_df = pd.DataFrame(exp_data)
+                fig = px.box(exp_df,
+                           x='Role',
+                           y='Years',
+                           title='Years of Experience by Role')
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No career progression data available")
+                
+        except Exception as e:
+            st.error(f"Error analyzing career progression: {str(e)}")
+    
     else:  # Skills Analysis
-        # Skills analysis code...
-        pass
+        st.subheader("Skills Analysis")
+        try:
+            # Create skills correlation matrix
+            skills_data = []
+            for _, row in filtered_df.iterrows():
+                skills = row.get('skills', {}).get('technical', [])
+                if isinstance(skills, list):
+                    skills_data.append(skills)
+            
+            if skills_data:
+                # Create co-occurrence matrix
+                all_skills = list(set([skill for skills in skills_data for skill in skills]))
+                matrix = np.zeros((len(all_skills), len(all_skills)))
+                
+                for skills in skills_data:
+                    for i, skill1 in enumerate(all_skills):
+                        for j, skill2 in enumerate(all_skills):
+                            if skill1 in skills and skill2 in skills:
+                                matrix[i, j] += 1
+                
+                fig = px.imshow(matrix,
+                              x=all_skills,
+                              y=all_skills,
+                              title="Skills Co-occurrence Matrix")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No skills data available")
+                
+        except Exception as e:
+            st.error(f"Error analyzing skills: {str(e)}")
 
 def show_data_tab(filtered_df):
     """Display the Data tab content."""
