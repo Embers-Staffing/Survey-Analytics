@@ -466,16 +466,27 @@ def show_overview_tab(filtered_df):
                 all_skills.extend(skills)
         
         if all_skills:
-            skills_df = pd.DataFrame(all_skills, columns=['Skill'])
+            # Create DataFrame and get value counts
+            skills_counts = pd.DataFrame(
+                pd.Series(all_skills).value_counts()
+            ).reset_index()
+            skills_counts.columns = ['Skill', 'Count']  # Rename columns
             
             # Create bar chart
             fig = px.bar(
-                skills_df['Skill'].value_counts().reset_index(),
-                x='index',
-                y='Skill',
-                title='Technical Skills Distribution',
-                labels={'index': 'Skill', 'Skill': 'Count'}
+                skills_counts,
+                x='Skill',
+                y='Count',
+                title='Technical Skills Distribution'
             )
+            
+            # Update layout
+            fig.update_layout(
+                xaxis_title="Skill",
+                yaxis_title="Number of Responses",
+                xaxis_tickangle=-45
+            )
+            
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No skills data available")
