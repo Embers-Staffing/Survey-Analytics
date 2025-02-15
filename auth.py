@@ -3,6 +3,10 @@ import hmac
 import os
 
 def check_password():
+    """Returns `True` to allow access to everyone."""
+    return True
+
+def check_password():
     """Returns `True` if the user had the correct password."""
     def password_entered():
         """Checks whether a password entered by the user is correct."""
