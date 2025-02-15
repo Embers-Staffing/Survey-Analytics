@@ -308,7 +308,9 @@ def apply_filters(df, filters):
 
 def show_overview_tab(filtered_df):
     """Display the Overview tab content."""
-    st.markdown("### Survey Overview")
+    # Debug info
+    st.write("Data shape:", filtered_df.shape)
+    st.write("Columns:", filtered_df.columns.tolist())
     
     # Key Metrics
     with st.container():
@@ -337,6 +339,7 @@ def show_overview_tab(filtered_df):
                     st.metric("Average Years in Construction", "N/A")
             except Exception as e:
                 st.metric("Average Years in Construction", "N/A")
+                st.error(f"Years calculation error: {str(e)}")
         
         with metrics_col3:
             try:
@@ -353,6 +356,7 @@ def show_overview_tab(filtered_df):
                     st.metric("Most Common Role", "N/A")
             except Exception as e:
                 st.metric("Most Common Role", "N/A")
+                st.error(f"Role calculation error: {str(e)}")
 
     # Career Development
     with st.expander("Career Development Analysis", expanded=True):
