@@ -354,6 +354,49 @@ def show_overview_tab(filtered_df):
             except Exception as e:
                 st.metric("Most Common Role", "N/A")
 
+    # Career Development
+    with st.expander("Career Development Analysis", expanded=True):
+        st.subheader("Career Goals and Preferences")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            try:
+                goals_list = []
+                for _, row in filtered_df.iterrows():
+                    goals = row.get('goals', {}).get('careerGoals', [])
+                    if isinstance(goals, list):
+                        goals_list.extend(goals)
+                
+                if goals_list:
+                    career_goals_df = pd.DataFrame(goals_list, columns=['goal'])
+                    fig = px.pie(career_goals_df, names='goal', 
+                               title='Career Goals Distribution',
+                               color_discrete_sequence=px.colors.qualitative.Set3)
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.write("No career goals data available")
+            except Exception as e:
+                st.write("Error displaying career goals chart")
+        
+        with col2:
+            try:
+                prefs = []
+                for _, row in filtered_df.iterrows():
+                    pref = row.get('goals', {}).get('advancementPreference')
+                    if pref:
+                        prefs.append(pref)
+                
+                if prefs:
+                    pref_df = pd.DataFrame(prefs, columns=['preference'])
+                    fig = px.pie(pref_df, names='preference',
+                               title='Advancement Preferences',
+                               color_discrete_sequence=px.colors.qualitative.Set3)
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.write("No advancement preference data available")
+            except Exception as e:
+                st.write("Error displaying preferences chart")
+
 def show_analytics_tab(filtered_df):
     """Display the Analytics tab content."""
     st.markdown("### Advanced Analytics")
