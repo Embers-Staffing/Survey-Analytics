@@ -312,6 +312,22 @@ def show_overview_tab(filtered_df):
     st.write("Data shape:", filtered_df.shape)
     st.write("Columns:", filtered_df.columns.tolist())
     
+    # Sample data structure
+    if not filtered_df.empty:
+        st.write("Sample data structure:")
+        sample_row = filtered_df.iloc[0].to_dict()
+        st.json(sample_row)
+    
+    # Check nested structures
+    st.write("Data validation:")
+    data_checks = {
+        "Skills data": sum([1 for row in filtered_df.itertuples() if isinstance(getattr(row, 'skills', None), dict)]),
+        "Goals data": sum([1 for row in filtered_df.itertuples() if isinstance(getattr(row, 'goals', None), dict)]),
+        "Personality data": sum([1 for row in filtered_df.itertuples() if isinstance(getattr(row, 'personalityTraits', None), dict)]),
+        "Work preferences": sum([1 for row in filtered_df.itertuples() if isinstance(getattr(row, 'workPreferences', None), dict)])
+    }
+    st.write(data_checks)
+
     # Key Metrics
     with st.container():
         st.subheader("Key Metrics")
