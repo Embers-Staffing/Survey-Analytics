@@ -540,11 +540,14 @@ def show_overview_tab(filtered_df):
                     holland_data.extend(codes)
             
             if holland_data:
-                holland_df = pd.DataFrame(holland_data, columns=['Code'])
+                # Create DataFrame and get value counts
+                holland_counts = pd.DataFrame(pd.Series(holland_data).value_counts()).reset_index()
+                holland_counts.columns = ['Holland Code', 'Count']  # Rename columns
+                
                 fig_holland = px.pie(
-                    holland_df['Code'].value_counts().reset_index(),
-                    values='Code',
-                    names='index',
+                    holland_counts,
+                    values='Count',
+                    names='Holland Code',  # Use the renamed column
                     title='Holland Code Distribution'
                 )
                 st.plotly_chart(fig_holland, use_container_width=True)
