@@ -315,15 +315,16 @@ def show_overview_tab(filtered_df):
     """Display the Overview tab content."""
     st.markdown("### Survey Overview")
     
-    # Key Metrics
+    # Key Metrics with Trends
     with st.container():
         st.subheader("Key Metrics")
-        metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
+        metrics_col1, metrics_col2, metrics_col3, metrics_col4 = st.columns(4)
         
         with metrics_col1:
+            total_responses = len(filtered_df)
             st.metric(
                 "Total Responses",
-                len(filtered_df),
+                total_responses,
                 delta=None
             )
         
@@ -358,146 +359,194 @@ def show_overview_tab(filtered_df):
                     st.metric("Most Common Role", "N/A")
             except Exception as e:
                 st.metric("Most Common Role", "N/A")
-
-    # Career Development
-    with st.expander("Career Development Analysis", expanded=True):
-        st.subheader("Career Goals and Preferences")
-        col1, col2 = st.columns(2)
         
-        with col1:
+        with metrics_col4:
             try:
-                goals_list = []
-                for _, row in filtered_df.iterrows():
-                    goals = row.get('goals', {}).get('careerGoals', [])
-                    if isinstance(goals, list):
-                        goals_list.extend(goals)
-                
-                if goals_list:
-                    career_goals_df = pd.DataFrame(goals_list, columns=['goal'])
-                    fig = px.pie(career_goals_df, names='goal', 
-                               title='Career Goals Distribution',
-                               color_discrete_sequence=px.colors.qualitative.Set3)
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.write("No career goals data available")
+                avg_skills = sum([len(row.get('skills', {}).get('technical', [])) 
+                                for _, row in filtered_df.iterrows()]) / len(filtered_df)
+                st.metric("Average Skills per Person", f"{avg_skills:.1f}")
             except Exception as e:
-                st.write("Error displaying career goals chart")
-        
-        with col2:
-            try:
-                prefs = []
-                for _, row in filtered_df.iterrows():
-                    pref = row.get('goals', {}).get('advancementPreference')
-                    if pref:
-                        prefs.append(pref)
-                
-                if prefs:
-                    pref_df = pd.DataFrame(prefs, columns=['preference'])
-                    fig = px.pie(pref_df, names='preference',
-                               title='Advancement Preferences',
-                               color_discrete_sequence=px.colors.qualitative.Set3)
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.write("No advancement preference data available")
-            except Exception as e:
-                st.write("Error displaying preferences chart")
-
-    # Career Path Analysis
-    st.subheader("Career Path Analysis")
+                st.metric("Average Skills per Person", "N/A")
+    
+    # Response Trends
+    st.subheader("Response Trends")
     try:
-        # Create role progression data
-        role_progression = []
-        for _, row in filtered_df.iterrows():
-            try:
-                years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
-                current_role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
-                target_roles = row.get('workPreferences', {}).get('roles', ['Unknown'])
-                target_role = target_roles[0] if target_roles else 'Unknown'
-                salary_level = row.get('goals', {}).get('targetSalary', 'entry')
-                
-                # Clean up role names
-                current_role = current_role.replace('-', ' ').title()
-                target_role = target_role.replace('-', ' ').title()
-                
-                role_progression.append({
-                    'Current Role': current_role,
-                    'Target Role': target_role,
-                    'Salary Level': salary_level.title()
-                })
-            except:
-                continue
+        dates = pd.to_datetime(filtered_df['submittedAt'])
+        daily_counts = dates.dt.date.value_counts().sort_index()
         
-        if role_progression:
-            # Create Sankey diagram
-            prog_df = pd.DataFrame(role_progression)
-            fig = go.Figure(data=[go.Sankey(
-                node = dict(
-                    pad = 15,
-                    thickness = 20,
-                    line = dict(color = "black", width = 0.5),
-                    label = list(set(prog_df['Current Role'].unique()).union(
-                               prog_df['Target Role'].unique()).union(
-                               prog_df['Salary Level'].unique())),
-                    color = "lightblue"
-                ),
-                link = dict(
-                    source = [prog_df['Current Role'].unique().tolist().index(x) for x in prog_df['Current Role']] +
-                            [len(prog_df['Current Role'].unique()) + prog_df['Target Role'].unique().tolist().index(x) 
-                             for x in prog_df['Target Role']],
-                    target = [len(prog_df['Current Role'].unique()) + prog_df['Target Role'].unique().tolist().index(x) 
-                             for x in prog_df['Target Role']] +
-                            [len(prog_df['Current Role'].unique()) + len(prog_df['Target Role'].unique()) + 
-                             prog_df['Salary Level'].unique().tolist().index(x) for x in prog_df['Salary Level']],
-                    value = [1] * (len(prog_df) * 2)
-                )
-            )])
-            
-            fig.update_layout(title_text="Career Progression Flow")
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No career progression data available")
-            
+        fig_trends = px.line(
+            x=daily_counts.index,
+            y=daily_counts.values,
+            title="Daily Response Trends",
+            labels={'x': 'Date', 'y': 'Number of Responses'}
+        )
+        st.plotly_chart(fig_trends, use_container_width=True)
     except Exception as e:
-        st.error(f"Error displaying career progression: {str(e)}")
-
-    # Skills Analysis
-    st.subheader("Skills Distribution")
+        st.error(f"Error displaying response trends: {str(e)}")
+    
+    # Demographics Overview
+    st.subheader("Demographics Overview")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        try:
+            # Experience Distribution
+            exp_ranges = []
+            for _, row in filtered_df.iterrows():
+                years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                if years < 2:
+                    exp_ranges.append("0-2 years")
+                elif years < 5:
+                    exp_ranges.append("2-5 years")
+                elif years < 10:
+                    exp_ranges.append("5-10 years")
+                else:
+                    exp_ranges.append("10+ years")
+            
+            exp_df = pd.DataFrame(exp_ranges, columns=['Experience Range'])
+            fig_exp = px.pie(
+                exp_df,
+                names='Experience Range',
+                title='Experience Distribution'
+            )
+            st.plotly_chart(fig_exp, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error displaying experience distribution: {str(e)}")
+    
+    with col2:
+        try:
+            # Project Size Distribution
+            sizes = [row.get('skills', {}).get('experience', {}).get('projectSize', 'Unknown')
+                    for _, row in filtered_df.iterrows()]
+            size_df = pd.DataFrame(sizes, columns=['Project Size'])
+            fig_size = px.pie(
+                size_df,
+                names='Project Size',
+                title='Project Size Distribution'
+            )
+            st.plotly_chart(fig_size, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error displaying project size distribution: {str(e)}")
+    
+    # Career Goals and Preferences
+    st.subheader("Career Development Overview")
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        try:
+            # Career Goals Distribution
+            goals_list = []
+            for _, row in filtered_df.iterrows():
+                goals = row.get('goals', {}).get('careerGoals', [])
+                if isinstance(goals, list):
+                    goals_list.extend(goals)
+            
+            if goals_list:
+                goals_df = pd.DataFrame(goals_list, columns=['Goal'])
+                fig_goals = px.pie(
+                    goals_df,
+                    names='Goal',
+                    title='Career Goals Distribution'
+                )
+                st.plotly_chart(fig_goals, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error displaying career goals: {str(e)}")
+    
+    with col4:
+        try:
+            # Advancement Preferences
+            prefs = []
+            for _, row in filtered_df.iterrows():
+                pref = row.get('goals', {}).get('advancementPreference')
+                if pref:
+                    prefs.append(pref)
+            
+            if prefs:
+                prefs_df = pd.DataFrame(prefs, columns=['Preference'])
+                fig_prefs = px.pie(
+                    prefs_df,
+                    names='Preference',
+                    title='Advancement Preferences'
+                )
+                st.plotly_chart(fig_prefs, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error displaying advancement preferences: {str(e)}")
+    
+    # Skills Overview
+    st.subheader("Skills Overview")
     try:
-        # Extract technical skills
-        all_skills = []
+        # Technical Skills Distribution
+        skills_data = []
         for _, row in filtered_df.iterrows():
             skills = row.get('skills', {}).get('technical', [])
             if isinstance(skills, list):
-                all_skills.extend(skills)
+                skills_data.extend(skills)
         
-        if all_skills:
-            # Create DataFrame and get value counts
-            skills_counts = pd.DataFrame(
-                pd.Series(all_skills).value_counts()
-            ).reset_index()
-            skills_counts.columns = ['Skill', 'Count']  # Rename columns
+        if skills_data:
+            skills_df = pd.DataFrame(pd.Series(skills_data).value_counts()).reset_index()
+            skills_df.columns = ['Skill', 'Count']
             
-            # Create bar chart
-            fig = px.bar(
-                skills_counts,
+            fig_skills = px.bar(
+                skills_df,
                 x='Skill',
                 y='Count',
                 title='Technical Skills Distribution'
             )
-            
-            # Update layout
-            fig.update_layout(
-                xaxis_title="Skill",
-                yaxis_title="Number of Responses",
-                xaxis_tickangle=-45
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No skills data available")
-            
+            fig_skills.update_layout(xaxis_tickangle=-45)
+            st.plotly_chart(fig_skills, use_container_width=True)
     except Exception as e:
-        st.error(f"Error displaying skills distribution: {str(e)}")
+        st.error(f"Error displaying skills overview: {str(e)}")
+    
+    # Personality Overview
+    st.subheader("Personality Type Overview")
+    col5, col6 = st.columns(2)
+    
+    with col5:
+        try:
+            # MBTI Distribution
+            mbti_data = []
+            for _, row in filtered_df.iterrows():
+                traits = row.get('personalityTraits', {}).get('myersBriggs', {})
+                if isinstance(traits, dict):
+                    mbti_type = ''
+                    for trait in ['attention', 'information', 'decisions', 'lifestyle']:
+                        if trait in traits and traits[trait]:
+                            mbti_type += traits[trait][0]
+                    if len(mbti_type) == 4:
+                        mbti_data.append(mbti_type)
+            
+            if mbti_data:
+                mbti_df = pd.DataFrame(mbti_data, columns=['Type'])
+                fig_mbti = px.pie(
+                    mbti_df['Type'].value_counts().reset_index(),
+                    values='Type',
+                    names='index',
+                    title='MBTI Type Distribution'
+                )
+                st.plotly_chart(fig_mbti, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error displaying MBTI distribution: {str(e)}")
+    
+    with col6:
+        try:
+            # Holland Code Distribution
+            holland_data = []
+            for _, row in filtered_df.iterrows():
+                codes = row.get('personalityTraits', {}).get('hollandCode', [])
+                if isinstance(codes, list):
+                    holland_data.extend(codes)
+            
+            if holland_data:
+                holland_df = pd.DataFrame(holland_data, columns=['Code'])
+                fig_holland = px.pie(
+                    holland_df['Code'].value_counts().reset_index(),
+                    values='Code',
+                    names='index',
+                    title='Holland Code Distribution'
+                )
+                st.plotly_chart(fig_holland, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error displaying Holland code distribution: {str(e)}")
 
 def show_analytics_tab(filtered_df):
     """Display the Analytics tab content."""
