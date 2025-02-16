@@ -694,24 +694,113 @@ def show_analytics_tab(filtered_df):
     elif analysis_type == "Skills Analysis":
         st.subheader("Skills Analysis")
         try:
-            # Skills Distribution
+            # Extract skills data
             skills_data = []
+            certifications_data = []
             for _, row in filtered_df.iterrows():
                 skills = row.get('skills', {}).get('technical', [])
+                certs = row.get('skills', {}).get('certifications', [])
                 if isinstance(skills, list):
                     skills_data.extend(skills)
+                if isinstance(certs, list):
+                    certifications_data.extend(certs)
             
             if skills_data:
-                skills_counts = pd.DataFrame(pd.Series(skills_data).value_counts()).reset_index()
-                skills_counts.columns = ['Skill', 'Count']
+                # Technical Skills Analysis
+                st.write("### Technical Skills Distribution")
+                col1, col2 = st.columns(2)
                 
-                # Bar chart
-                fig1 = px.bar(skills_counts, x='Skill', y='Count', 
-                            title='Skills Distribution')
-                fig1.update_layout(xaxis_tickangle=-45)
-                st.plotly_chart(fig1, use_container_width=True)
+                with col1:
+                    # Bar chart
+                    skills_counts = pd.DataFrame(pd.Series(skills_data).value_counts()).reset_index()
+                    skills_counts.columns = ['Skill', 'Count']
+                    
+                    fig1 = px.bar(skills_counts, 
+                                x='Skill', 
+                                y='Count',
+                                title='Technical Skills Distribution')
+                    fig1.update_layout(xaxis_tickangle=-45)
+                    st.plotly_chart(fig1, use_container_width=True)
                 
-                # Skills correlation heatmap
+                with col2:
+                    # Pie chart
+                    fig2 = px.pie(skills_counts,
+                                values='Count',
+                                names='Skill',
+                                title='Skills Proportion')
+                    st.plotly_chart(fig2, use_container_width=True)
+                
+                # Skills by Experience Level
+                st.write("### Skills by Experience Level")
+                skills_by_exp = []
+                for _, row in filtered_df.iterrows():
+                    years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                    skills = row.get('skills', {}).get('technical', [])
+                    if isinstance(skills, list):
+                        exp_level = "Junior (0-2 years)" if years < 2 else \
+                                  "Mid-level (2-5 years)" if years < 5 else \
+                                  "Senior (5-10 years)" if years < 10 else \
+                                  "Expert (10+ years)"
+                        for skill in skills:
+                            skills_by_exp.append({
+                                'Skill': skill,
+                                'Experience Level': exp_level
+                            })
+                
+                if skills_by_exp:
+                    exp_df = pd.DataFrame(skills_by_exp)
+                    fig3 = px.histogram(exp_df,
+                                      x='Experience Level',
+                                      color='Skill',
+                                      title='Skills Distribution by Experience Level',
+                                      barmode='group')
+                    st.plotly_chart(fig3, use_container_width=True)
+                
+                # Certifications Analysis
+                if certifications_data:
+                    st.write("### Certifications Analysis")
+                    col3, col4 = st.columns(2)
+                    
+                    with col3:
+                        # Certifications distribution
+                        cert_counts = pd.DataFrame(pd.Series(certifications_data).value_counts()).reset_index()
+                        cert_counts.columns = ['Certification', 'Count']
+                        
+                        fig4 = px.bar(cert_counts,
+                                    x='Certification',
+                                    y='Count',
+                                    title='Certifications Distribution')
+                        fig4.update_layout(xaxis_tickangle=-45)
+                        st.plotly_chart(fig4, use_container_width=True)
+                    
+                    with col4:
+                        # Average number of certifications by experience
+                        cert_by_exp = []
+                        for _, row in filtered_df.iterrows():
+                            years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                            certs = row.get('skills', {}).get('certifications', [])
+                            if isinstance(certs, list):
+                                exp_level = "Junior (0-2 years)" if years < 2 else \
+                                          "Mid-level (2-5 years)" if years < 5 else \
+                                          "Senior (5-10 years)" if years < 10 else \
+                                          "Expert (10+ years)"
+                                cert_by_exp.append({
+                                    'Experience Level': exp_level,
+                                    'Number of Certifications': len(certs)
+                                })
+                        
+                        cert_exp_df = pd.DataFrame(cert_by_exp)
+                        avg_certs = cert_exp_df.groupby('Experience Level')['Number of Certifications'].mean().reset_index()
+                        
+                        fig5 = px.bar(avg_certs,
+                                    x='Experience Level',
+                                    y='Number of Certifications',
+                                    title='Average Certifications by Experience Level')
+                        st.plotly_chart(fig5, use_container_width=True)
+                
+                # Skills Co-occurrence Analysis
+                st.write("### Skills Relationships")
+                # Create co-occurrence matrix
                 all_skills = list(set(skills_data))
                 matrix = np.zeros((len(all_skills), len(all_skills)))
                 
@@ -723,12 +812,35 @@ def show_analytics_tab(filtered_df):
                                 if skill1 in skills and skill2 in skills:
                                     matrix[i, j] += 1
                 
-                fig2 = px.imshow(matrix,
+                fig6 = px.imshow(matrix,
                                x=all_skills,
                                y=all_skills,
-                               title="Skills Co-occurrence Matrix")
-                st.plotly_chart(fig2, use_container_width=True)
-        
+                               title="Skills Co-occurrence Matrix",
+                               color_continuous_scale="Viridis")
+                st.plotly_chart(fig6, use_container_width=True)
+                
+                # Summary Statistics
+                st.write("### Skills Summary")
+                col5, col6, col7 = st.columns(3)
+                
+                with col5:
+                    avg_skills = len(skills_data) / len(filtered_df)
+                    st.metric("Average Skills per Person", f"{avg_skills:.1f}")
+                
+                with col6:
+                    most_common_skill = skills_counts['Skill'].iloc[0]
+                    st.metric("Most Common Skill", most_common_skill)
+                
+                with col7:
+                    if certifications_data:
+                        avg_certs = len(certifications_data) / len(filtered_df)
+                        st.metric("Average Certifications", f"{avg_certs:.1f}")
+                    else:
+                        st.metric("Average Certifications", "N/A")
+            
+            else:
+                st.info("No skills data available")
+            
         except Exception as e:
             st.error(f"Error in skills analysis: {str(e)}")
     
