@@ -483,7 +483,143 @@ def show_overview_tab(filtered_df):
                            trendline="lowess")
             st.plotly_chart(fig, use_container_width=True)
     
-    # Add more interactive sections for roles, skills, and personality...
+    # Role Distribution Analysis
+    if show_roles:
+        st.subheader("Role Distribution Analysis")
+        col3, col4 = st.columns(2)
+        
+        with col3:
+            # Role Distribution
+            roles_data = []
+            for _, row in date_filtered_df.iterrows():
+                role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                if role != 'Unknown':
+                    roles_data.append(role.replace('-', ' ').title())
+            
+            roles_df = pd.DataFrame(roles_data, columns=['Role'])
+            
+            # Add visualization selector
+            viz_type = st.selectbox(
+                "Select Role Visualization",
+                ["Pie Chart", "Bar Chart", "Donut Chart"],
+                key="role_viz"
+            )
+            
+            if viz_type == "Pie Chart":
+                fig = px.pie(roles_df, names='Role', title='Role Distribution')
+            elif viz_type == "Bar Chart":
+                fig = px.bar(roles_df['Role'].value_counts(), title='Role Distribution')
+            else:  # Donut Chart
+                fig = px.pie(roles_df, names='Role', title='Role Distribution', hole=0.4)
+            
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col4:
+            # Role vs Project Size
+            project_sizes = []
+            for _, row in date_filtered_df.iterrows():
+                role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                size = row.get('skills', {}).get('experience', {}).get('projectSize', 'Unknown')
+                if role != 'Unknown' and size != 'Unknown':
+                    project_sizes.append({
+                        'Role': role.replace('-', ' ').title(),
+                        'Project Size': size.title()
+                    })
+            
+            if project_sizes:
+                size_df = pd.DataFrame(project_sizes)
+                fig = px.sunburst(size_df, 
+                                path=['Role', 'Project Size'],
+                                title='Roles by Project Size')
+                st.plotly_chart(fig, use_container_width=True)
+    
+    # Skills Analysis
+    if show_skills:
+        st.subheader("Skills Analysis")
+        col5, col6 = st.columns(2)
+        
+        with col5:
+            # Technical Skills Distribution
+            skills_data = []
+            for _, row in date_filtered_df.iterrows():
+                skills = row.get('skills', {}).get('technical', [])
+                if isinstance(skills, list):
+                    skills_data.extend(skills)
+            
+            if skills_data:
+                skills_df = pd.DataFrame(pd.Series(skills_data).value_counts()).reset_index()
+                skills_df.columns = ['Skill', 'Count']
+                
+                fig = px.bar(skills_df,
+                           x='Skill',
+                           y='Count',
+                           title='Technical Skills Distribution')
+                fig.update_layout(xaxis_tickangle=-45)
+                st.plotly_chart(fig, use_container_width=True)
+        
+        with col6:
+            # Certifications Distribution
+            cert_data = []
+            for _, row in date_filtered_df.iterrows():
+                certs = row.get('skills', {}).get('certifications', [])
+                if isinstance(certs, list):
+                    cert_data.extend(certs)
+            
+            if cert_data:
+                cert_df = pd.DataFrame(pd.Series(cert_data).value_counts()).reset_index()
+                cert_df.columns = ['Certification', 'Count']
+                
+                fig = px.pie(cert_df,
+                           values='Count',
+                           names='Certification',
+                           title='Certifications Distribution')
+                st.plotly_chart(fig, use_container_width=True)
+    
+    # Personality Analysis
+    if show_personality:
+        st.subheader("Personality Analysis")
+        col7, col8 = st.columns(2)
+        
+        with col7:
+            # MBTI Distribution
+            mbti_data = []
+            for _, row in date_filtered_df.iterrows():
+                traits = row.get('personalityTraits', {}).get('myersBriggs', {})
+                if isinstance(traits, dict):
+                    mbti_type = ''
+                    for trait in ['attention', 'information', 'decisions', 'lifestyle']:
+                        if trait in traits and traits[trait]:
+                            mbti_type += traits[trait][0]
+                    if len(mbti_type) == 4:
+                        mbti_data.append(mbti_type)
+            
+            if mbti_data:
+                mbti_counts = pd.DataFrame(pd.Series(mbti_data).value_counts()).reset_index()
+                mbti_counts.columns = ['MBTI Type', 'Count']
+                
+                fig = px.pie(mbti_counts,
+                           values='Count',
+                           names='MBTI Type',
+                           title='MBTI Type Distribution')
+                st.plotly_chart(fig, use_container_width=True)
+        
+        with col8:
+            # Holland Code Distribution
+            holland_data = []
+            for _, row in date_filtered_df.iterrows():
+                codes = row.get('personalityTraits', {}).get('hollandCode', [])
+                if isinstance(codes, list):
+                    holland_data.extend(codes)
+            
+            if holland_data:
+                holland_counts = pd.DataFrame(pd.Series(holland_data).value_counts()).reset_index()
+                holland_counts.columns = ['Holland Code', 'Count']
+                
+                fig = px.pie(holland_counts,
+                           values='Count',
+                           names='Holland Code',
+                           title='Holland Code Distribution')
+                st.plotly_chart(fig, use_container_width=True)
     
     # Interactive Insights
     st.subheader("Key Insights")
