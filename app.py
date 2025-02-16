@@ -500,7 +500,7 @@ def show_analytics_tab(filtered_df):
     
     analysis_type = st.radio(
         "Select Analysis Type",
-        ["Personality Clusters", "Career Progression", "Skills Analysis"],
+        ["Personality Clusters", "Career Progression", "Skills Analysis", "ML Insights"],
         horizontal=True
     )
     
@@ -613,7 +613,7 @@ def show_analytics_tab(filtered_df):
         except Exception as e:
             st.error(f"Error in career progression analysis: {str(e)}")
     
-    else:  # Skills Analysis
+    elif analysis_type == "Skills Analysis":
         st.subheader("Skills Analysis")
         try:
             # Skills Distribution
@@ -653,6 +653,100 @@ def show_analytics_tab(filtered_df):
         
         except Exception as e:
             st.error(f"Error in skills analysis: {str(e)}")
+    
+    elif analysis_type == "ML Insights":
+        st.subheader("Machine Learning Insights")
+        
+        try:
+            # Experience Prediction Model
+            st.write("### Experience Level Prediction")
+            
+            # Prepare data
+            exp_data = []
+            for _, row in filtered_df.iterrows():
+                years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                skills = len(row.get('skills', {}).get('technical', []))
+                salary = row.get('goals', {}).get('targetSalary', 'entry')
+                
+                exp_data.append({
+                    'Years': years,
+                    'Role': role,
+                    'Skills': skills,
+                    'Salary': salary
+                })
+            
+            if exp_data:
+                exp_df = pd.DataFrame(exp_data)
+                
+                # Create correlation heatmap
+                corr_matrix = exp_df.select_dtypes(include=[np.number]).corr()
+                fig = px.imshow(corr_matrix,
+                              title="Feature Correlation Heatmap",
+                              color_continuous_scale='RdBu')
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Clustering Analysis
+                if len(exp_df) > 5:  # Need enough data for clustering
+                    # Prepare features for clustering
+                    features = exp_df[['Years', 'Skills']].values
+                    scaler = StandardScaler()
+                    features_scaled = scaler.fit_transform(features)
+                    
+                    # Perform K-means clustering
+                    kmeans = KMeans(n_clusters=3, random_state=42)
+                    clusters = kmeans.fit_predict(features_scaled)
+                    
+                    # Add clusters to dataframe
+                    exp_df['Cluster'] = clusters
+                    
+                    # Create scatter plot
+                    fig = px.scatter(exp_df,
+                                   x='Years',
+                                   y='Skills',
+                                   color='Cluster',
+                                   title='Experience Clusters',
+                                   labels={'Years': 'Years in Construction',
+                                          'Skills': 'Number of Skills'})
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            # Personality Analysis with ML
+            st.write("### Personality Type Analysis")
+            
+            # Extract MBTI data
+            mbti_data = []
+            roles = []
+            for _, row in filtered_df.iterrows():
+                traits = row.get('personalityTraits', {}).get('myersBriggs', {})
+                role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                
+                if isinstance(traits, dict) and role != 'Unknown':
+                    mbti_type = ''
+                    for trait in ['attention', 'information', 'decisions', 'lifestyle']:
+                        if trait in traits and traits[trait]:
+                            mbti_type += traits[trait][0]
+                    if len(mbti_type) == 4:
+                        mbti_data.append(mbti_type)
+                        roles.append(role)
+            
+            if mbti_data and roles:
+                # Create personality-role correlation
+                personality_df = pd.DataFrame({
+                    'MBTI': mbti_data,
+                    'Role': roles
+                })
+                
+                # Create cross-tabulation
+                cross_tab = pd.crosstab(personality_df['MBTI'], personality_df['Role'])
+                
+                # Create heatmap
+                fig = px.imshow(cross_tab,
+                              title="Personality-Role Distribution",
+                              color_continuous_scale='Viridis')
+                st.plotly_chart(fig, use_container_width=True)
+        
+        except Exception as e:
+            st.error(f"Error in ML analysis: {str(e)}")
 
 def show_data_tab(filtered_df):
     """Display the Data tab content."""
