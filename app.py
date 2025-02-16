@@ -564,56 +564,129 @@ def show_analytics_tab(filtered_df):
             for _, row in filtered_df.iterrows():
                 years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
                 role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                salary = row.get('goals', {}).get('targetSalary', 'entry')
+                project_size = row.get('skills', {}).get('experience', {}).get('projectSize', 'Unknown')
+                
                 if role != 'Unknown':
                     exp_data.append({
                         'Role': role.replace('-', ' ').title(),
-                        'Years': years
+                        'Years': years,
+                        'Salary Level': salary.title(),
+                        'Project Size': project_size.title()
                     })
             
             if exp_data:
                 exp_df = pd.DataFrame(exp_data)
-                fig1 = px.box(exp_df, x='Role', y='Years', title='Years of Experience by Role')
-                st.plotly_chart(fig1, use_container_width=True)
-            
-            # Career Path Sankey
-            path_data = []
-            for _, row in filtered_df.iterrows():
-                current = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
-                target = row.get('workPreferences', {}).get('roles', ['Unknown'])[0]
-                salary = row.get('goals', {}).get('targetSalary', 'entry')
                 
-                if current != 'Unknown' and target != 'Unknown':
-                    path_data.append({
-                        'Current': current.replace('-', ' ').title(),
-                        'Target': target.replace('-', ' ').title(),
-                        'Salary': salary.title()
-                    })
-            
-            if path_data:
-                path_df = pd.DataFrame(path_data)
-                fig2 = go.Figure(data=[go.Sankey(
-                    node=dict(
-                        pad=15,
-                        thickness=20,
-                        line=dict(color="black", width=0.5),
-                        label=list(set(path_df['Current'].unique()).union(
-                               path_df['Target'].unique()).union(
-                               path_df['Salary'].unique())),
-                        color="lightblue"
-                    ),
-                    link=dict(
-                        source=[path_df['Current'].unique().tolist().index(x) for x in path_df['Current']] +
-                               [len(path_df['Current'].unique()) + path_df['Target'].unique().tolist().index(x) 
-                                for x in path_df['Target']],
-                        target=[len(path_df['Current'].unique()) + path_df['Target'].unique().tolist().index(x) 
-                               for x in path_df['Target']] +
-                               [len(path_df['Current'].unique()) + len(path_df['Target'].unique()) + 
-                                path_df['Salary'].unique().tolist().index(x) for x in path_df['Salary']],
-                        value=[1] * (len(path_df) * 2)
-                    )
-                )])
-                fig2.update_layout(title_text="Career Path Flow")
-                st.plotly_chart(fig2, use_container_width=True)
+                # Experience Distribution
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Box Plot
+                    fig1 = px.box(exp_df, x='Role', y='Years', 
+                                title='Years of Experience by Role')
+                    st.plotly_chart(fig1, use_container_width=True)
+                
+                with col2:
+                    # Violin Plot
+                    fig2 = px.violin(exp_df, x='Role', y='Years',
+                                   title='Experience Distribution by Role',
+                                   box=True)
+                    st.plotly_chart(fig2, use_container_width=True)
+                
+                # Project Size Analysis
+                st.subheader("Project Size Analysis")
+                col3, col4 = st.columns(2)
+                
+                with col3:
+                    # Project Size Distribution
+                    size_counts = exp_df['Project Size'].value_counts()
+                    fig3 = px.pie(values=size_counts.values, 
+                                names=size_counts.index,
+                                title='Project Size Distribution')
+                    st.plotly_chart(fig3, use_container_width=True)
+                
+                with col4:
+                    # Average Experience by Project Size
+                    avg_exp = exp_df.groupby('Project Size')['Years'].mean().reset_index()
+                    fig4 = px.bar(avg_exp, x='Project Size', y='Years',
+                                title='Average Experience by Project Size')
+                    st.plotly_chart(fig4, use_container_width=True)
+                
+                # Salary Level Analysis
+                st.subheader("Salary Level Analysis")
+                col5, col6 = st.columns(2)
+                
+                with col5:
+                    # Experience vs Salary Level
+                    fig5 = px.box(exp_df, x='Salary Level', y='Years',
+                                title='Experience Distribution by Salary Level')
+                    st.plotly_chart(fig5, use_container_width=True)
+                
+                with col6:
+                    # Role Distribution by Salary Level
+                    role_salary = pd.crosstab(exp_df['Role'], exp_df['Salary Level'])
+                    fig6 = px.imshow(role_salary,
+                                   title='Role Distribution by Salary Level',
+                                   aspect='auto')
+                    st.plotly_chart(fig6, use_container_width=True)
+                
+                # Career Path Sankey (existing code)
+                st.subheader("Career Path Flow")
+                path_data = []
+                for _, row in filtered_df.iterrows():
+                    current = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                    target = row.get('workPreferences', {}).get('roles', ['Unknown'])[0]
+                    salary = row.get('goals', {}).get('targetSalary', 'entry')
+                    
+                    if current != 'Unknown' and target != 'Unknown':
+                        path_data.append({
+                            'Current': current.replace('-', ' ').title(),
+                            'Target': target.replace('-', ' ').title(),
+                            'Salary': salary.title()
+                        })
+                
+                if path_data:
+                    path_df = pd.DataFrame(path_data)
+                    fig7 = go.Figure(data=[go.Sankey(
+                        node=dict(
+                            pad=15,
+                            thickness=20,
+                            line=dict(color="black", width=0.5),
+                            label=list(set(path_df['Current'].unique()).union(
+                                   path_df['Target'].unique()).union(
+                                   path_df['Salary'].unique())),
+                            color="lightblue"
+                        ),
+                        link=dict(
+                            source=[path_df['Current'].unique().tolist().index(x) for x in path_df['Current']] +
+                                   [len(path_df['Current'].unique()) + path_df['Target'].unique().tolist().index(x) 
+                                    for x in path_df['Target']],
+                            target=[len(path_df['Current'].unique()) + path_df['Target'].unique().tolist().index(x) 
+                                   for x in path_df['Target']] +
+                                   [len(path_df['Current'].unique()) + len(path_df['Target'].unique()) + 
+                                    path_df['Salary'].unique().tolist().index(x) for x in path_df['Salary']],
+                            value=[1] * (len(path_df) * 2)
+                        )
+                    )])
+                    fig7.update_layout(title_text="Career Path Flow")
+                    st.plotly_chart(fig7, use_container_width=True)
+                
+                # Summary Statistics
+                st.subheader("Career Progression Summary")
+                col7, col8, col9 = st.columns(3)
+                
+                with col7:
+                    avg_exp = exp_df['Years'].mean()
+                    st.metric("Average Years of Experience", f"{avg_exp:.1f}")
+                
+                with col8:
+                    most_common_role = exp_df['Role'].mode()[0]
+                    st.metric("Most Common Role", most_common_role)
+                
+                with col9:
+                    most_common_salary = exp_df['Salary Level'].mode()[0]
+                    st.metric("Most Common Salary Level", most_common_salary)
         
         except Exception as e:
             st.error(f"Error in career progression analysis: {str(e)}")
