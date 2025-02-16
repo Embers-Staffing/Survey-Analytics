@@ -512,45 +512,148 @@ def show_analytics_tab(filtered_df):
     if analysis_type == "Personality Clusters":
         st.subheader("Personality Type Analysis")
         
-        # MBTI Distribution
         try:
+            # MBTI Analysis
+            st.write("### MBTI Analysis")
             mbti_data = []
+            roles = []
+            years_exp = []
             for _, row in filtered_df.iterrows():
                 traits = row.get('personalityTraits', {}).get('myersBriggs', {})
+                role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                
                 if isinstance(traits, dict):
                     mbti_type = ''
+                    individual_traits = []
                     for trait in ['attention', 'information', 'decisions', 'lifestyle']:
                         if trait in traits and traits[trait]:
-                            mbti_type += traits[trait][0]
+                            value = traits[trait][0]
+                            mbti_type += value
+                            individual_traits.append(value)
                     if len(mbti_type) == 4:
-                        mbti_data.append(mbti_type)
+                        mbti_data.append({
+                            'MBTI': mbti_type,
+                            'Attention': individual_traits[0],
+                            'Information': individual_traits[1],
+                            'Decisions': individual_traits[2],
+                            'Lifestyle': individual_traits[3],
+                            'Role': role,
+                            'Years': years
+                        })
             
             if mbti_data:
-                mbti_counts = pd.DataFrame(pd.Series(mbti_data).value_counts()).reset_index()
-                mbti_counts.columns = ['MBTI Type', 'Count']
+                mbti_df = pd.DataFrame(mbti_data)
                 
-                # Pie chart
-                fig1 = px.pie(mbti_counts, values='Count', names='MBTI Type', title='MBTI Type Distribution')
-                st.plotly_chart(fig1, use_container_width=True)
+                # MBTI Distribution
+                col1, col2 = st.columns(2)
                 
-                # Bar chart
-                fig2 = px.bar(mbti_counts, x='MBTI Type', y='Count', title='MBTI Type Breakdown')
-                st.plotly_chart(fig2, use_container_width=True)
+                with col1:
+                    # Type Distribution Pie Chart
+                    type_counts = mbti_df['MBTI'].value_counts()
+                    fig1 = px.pie(values=type_counts.values,
+                                names=type_counts.index,
+                                title='MBTI Type Distribution')
+                    st.plotly_chart(fig1, use_container_width=True)
+                
+                with col2:
+                    # Individual Trait Distribution
+                    trait_data = []
+                    for trait in ['Attention', 'Information', 'Decisions', 'Lifestyle']:
+                        counts = mbti_df[trait].value_counts()
+                        for val, count in counts.items():
+                            trait_data.append({
+                                'Trait': trait,
+                                'Value': val,
+                                'Count': count
+                            })
+                    
+                    trait_df = pd.DataFrame(trait_data)
+                    fig2 = px.bar(trait_df,
+                                x='Trait',
+                                y='Count',
+                                color='Value',
+                                title='MBTI Trait Distribution',
+                                barmode='group')
+                    st.plotly_chart(fig2, use_container_width=True)
+                
+                # MBTI by Experience Level
+                st.write("### MBTI Types by Experience")
+                
+                # Calculate average years for each MBTI type
+                avg_years = mbti_df.groupby('MBTI')['Years'].mean().sort_values(ascending=False)
+                fig3 = px.bar(avg_years,
+                             title='Average Years of Experience by MBTI Type')
+                st.plotly_chart(fig3, use_container_width=True)
+                
+                # MBTI-Role Analysis
+                st.write("### MBTI Types by Role")
+                
+                # Create heatmap of MBTI types vs roles
+                role_mbti = pd.crosstab(mbti_df['MBTI'], mbti_df['Role'])
+                fig4 = px.imshow(role_mbti,
+                               title='MBTI Type Distribution Across Roles',
+                               aspect='auto')
+                st.plotly_chart(fig4, use_container_width=True)
             
-            # Holland Code Distribution
+            # Holland Code Analysis
+            st.write("### Holland Code Analysis")
             holland_data = []
             for _, row in filtered_df.iterrows():
                 codes = row.get('personalityTraits', {}).get('hollandCode', [])
+                role = row.get('skills', {}).get('experience', {}).get('role', 'Unknown')
+                years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                
                 if isinstance(codes, list) and codes:
-                    holland_data.extend(codes)
+                    for code in codes:
+                        holland_data.append({
+                            'Code': code,
+                            'Role': role,
+                            'Years': years
+                        })
             
             if holland_data:
-                holland_counts = pd.DataFrame(pd.Series(holland_data).value_counts()).reset_index()
-                holland_counts.columns = ['Holland Code', 'Count']
+                holland_df = pd.DataFrame(holland_data)
                 
-                fig3 = px.pie(holland_counts, values='Count', names='Holland Code', 
-                            title='Holland Code Distribution')
-                st.plotly_chart(fig3, use_container_width=True)
+                col3, col4 = st.columns(2)
+                
+                with col3:
+                    # Holland Code Distribution
+                    code_counts = holland_df['Code'].value_counts()
+                    fig5 = px.pie(values=code_counts.values,
+                                names=code_counts.index,
+                                title='Holland Code Distribution')
+                    st.plotly_chart(fig5, use_container_width=True)
+                
+                with col4:
+                    # Average Experience by Holland Code
+                    avg_years = holland_df.groupby('Code')['Years'].mean().sort_values(ascending=False)
+                    fig6 = px.bar(avg_years,
+                                title='Average Years of Experience by Holland Code')
+                    st.plotly_chart(fig6, use_container_width=True)
+                
+                # Holland Code-Role Analysis
+                role_holland = pd.crosstab(holland_df['Code'], holland_df['Role'])
+                fig7 = px.imshow(role_holland,
+                               title='Holland Code Distribution Across Roles',
+                               aspect='auto')
+                st.plotly_chart(fig7, use_container_width=True)
+                
+                # Summary Statistics
+                st.write("### Personality Summary")
+                col5, col6, col7 = st.columns(3)
+                
+                with col5:
+                    most_common_mbti = mbti_df['MBTI'].mode()[0]
+                    st.metric("Most Common MBTI Type", most_common_mbti)
+                
+                with col6:
+                    most_common_holland = holland_df['Code'].mode()[0]
+                    st.metric("Most Common Holland Code", most_common_holland)
+                
+                with col7:
+                    avg_exp = mbti_df['Years'].mean()
+                    st.metric("Average Years of Experience", f"{avg_exp:.1f}")
         
         except Exception as e:
             st.error(f"Error in personality analysis: {str(e)}")
