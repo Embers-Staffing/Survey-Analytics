@@ -516,11 +516,14 @@ def show_overview_tab(filtered_df):
                         mbti_data.append(mbti_type)
             
             if mbti_data:
-                mbti_df = pd.DataFrame(mbti_data, columns=['Type'])
+                # Create DataFrame and get value counts
+                mbti_counts = pd.DataFrame(pd.Series(mbti_data).value_counts()).reset_index()
+                mbti_counts.columns = ['MBTI Type', 'Count']  # Rename columns
+                
                 fig_mbti = px.pie(
-                    mbti_df['Type'].value_counts().reset_index(),
-                    values='Type',
-                    names='index',
+                    mbti_counts,
+                    values='Count',
+                    names='MBTI Type',  # Use the renamed column
                     title='MBTI Type Distribution'
                 )
                 st.plotly_chart(fig_mbti, use_container_width=True)
