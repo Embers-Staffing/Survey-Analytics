@@ -744,6 +744,157 @@ def show_analytics_tab(filtered_df):
                               title="Personality-Role Distribution",
                               color_continuous_scale='Viridis')
                 st.plotly_chart(fig, use_container_width=True)
+            
+            # Add PCA Analysis for Personality Types
+            st.write("### Personality Type PCA Analysis")
+            try:
+                # Prepare personality data
+                personality_data = []
+                for _, row in filtered_df.iterrows():
+                    traits = row.get('personalityTraits', {})
+                    if isinstance(traits, dict):
+                        # MBTI encoding
+                        mbti = traits.get('myersBriggs', {})
+                        if isinstance(mbti, dict):
+                            mbti_features = []
+                            for trait in ['attention', 'information', 'decisions', 'lifestyle']:
+                                value = mbti.get(trait, [''])[0]
+                                mbti_features.append(1 if value in ['E', 'S', 'T', 'J'] else 0)
+                            
+                            # Holland code encoding
+                            holland = traits.get('hollandCode', [])
+                            holland_features = [1 if code in holland else 0 
+                                             for code in HOLLAND_CODES]
+                            
+                            personality_data.append(mbti_features + holland_features)
+            
+                if personality_data:
+                    # Perform PCA
+                    pca = PCA(n_components=2)
+                    personality_transformed = pca.fit_transform(personality_data)
+                    
+                    # Create PCA plot
+                    pca_df = pd.DataFrame(
+                        personality_transformed,
+                        columns=['PC1', 'PC2']
+                    )
+                    
+                    fig = px.scatter(
+                        pca_df,
+                        x='PC1',
+                        y='PC2',
+                        title='Personality Type PCA',
+                        labels={'PC1': 'First Principal Component',
+                               'PC2': 'Second Principal Component'}
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Show explained variance
+                    explained_var = pca.explained_variance_ratio_
+                    st.write(f"Explained variance ratio: {explained_var[0]:.2%}, {explained_var[1]:.2%}")
+            
+            except Exception as e:
+                st.error(f"Error in PCA analysis: {str(e)}")
+            
+            # Experience Prediction with Regression
+            st.write("### Experience Level Regression")
+            try:
+                if len(exp_df) > 10:  # Need enough data for regression
+                    # Prepare features
+                    X = exp_df[['Skills']].values
+                    y = exp_df['Years'].values
+                    
+                    # Split data
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X, y, test_size=0.2, random_state=42
+                    )
+                    
+                    # Fit regression
+                    reg = LinearRegression()
+                    reg.fit(X_train, y_train)
+                    
+                    # Make predictions
+                    y_pred = reg.predict(X_test)
+                    
+                    # Create regression plot
+                    fig = go.Figure()
+                    
+                    # Add actual data points
+                    fig.add_trace(go.Scatter(
+                        x=X_test.flatten(),
+                        y=y_test,
+                        mode='markers',
+                        name='Actual',
+                        marker=dict(color='blue')
+                    ))
+                    
+                    # Add regression line
+                    X_line = np.linspace(X.min(), X.max(), 100).reshape(-1, 1)
+                    y_line = reg.predict(X_line)
+                    
+                    fig.add_trace(go.Scatter(
+                        x=X_line.flatten(),
+                        y=y_line,
+                        mode='lines',
+                        name='Predicted',
+                        line=dict(color='red')
+                    ))
+                    
+                    fig.update_layout(
+                        title='Skills vs Years Experience Regression',
+                        xaxis_title='Number of Skills',
+                        yaxis_title='Years of Experience'
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Show regression metrics
+                    r2 = r2_score(y_test, y_pred)
+                    mse = mean_squared_error(y_test, y_pred)
+                    st.write(f"R² Score: {r2:.2f}")
+                    st.write(f"Mean Squared Error: {mse:.2f}")
+            
+            except Exception as e:
+                st.error(f"Error in regression analysis: {str(e)}")
+            
+            # Skills Clustering Dendrogram
+            st.write("### Skills Clustering Dendrogram")
+            try:
+                if skills_data:
+                    # Create skills co-occurrence matrix
+                    skills_set = list(set(skills_data))
+                    n_skills = len(skills_set)
+                    skills_matrix = np.zeros((n_skills, n_skills))
+                    
+                    for _, row in filtered_df.iterrows():
+                        skills = row.get('skills', {}).get('technical', [])
+                        if isinstance(skills, list):
+                            for i, skill1 in enumerate(skills_set):
+                                for j, skill2 in enumerate(skills_set):
+                                    if skill1 in skills and skill2 in skills:
+                                        skills_matrix[i, j] += 1
+                    
+                    # Create linkage matrix
+                    linkage_matrix = linkage(skills_matrix, method='ward')
+                    
+                    # Create dendrogram
+                    fig = ff.create_dendrogram(
+                        skills_matrix,
+                        labels=skills_set,
+                        orientation='left',
+                        linkagefun=lambda x: linkage_matrix
+                    )
+                    
+                    fig.update_layout(
+                        title='Skills Clustering Dendrogram',
+                        width=800,
+                        height=500 + len(skills_set) * 20
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            except Exception as e:
+                st.error(f"Error in dendrogram analysis: {str(e)}")
         
         except Exception as e:
             st.error(f"Error in ML analysis: {str(e)}")
