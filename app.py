@@ -18,10 +18,15 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score, classification_report
+from scipy.cluster.hierarchy import linkage
+import plotly.figure_factory as ff
 
 # Firebase imports
 import firebase_admin
 from firebase_admin import credentials, firestore
+
+# Constants
+HOLLAND_CODES = ['Realistic', 'Investigative', 'Artistic', 'Social', 'Enterprising', 'Conventional']
 
 # Set style for seaborn
 sns.set_theme(style="whitegrid")
