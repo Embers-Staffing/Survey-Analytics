@@ -865,6 +865,13 @@ def show_analytics_tab(filtered_df):
             # Skills Clustering Dendrogram
             st.write("### Skills Clustering Dendrogram")
             try:
+                # Extract skills data
+                skills_data = []
+                for _, row in filtered_df.iterrows():
+                    skills = row.get('skills', {}).get('technical', [])
+                    if isinstance(skills, list):
+                        skills_data.extend(skills)
+                
                 if skills_data:
                     # Create skills co-occurrence matrix
                     skills_set = list(set(skills_data))
