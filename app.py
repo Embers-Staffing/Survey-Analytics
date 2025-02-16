@@ -559,14 +559,14 @@ def show_overview_tab(filtered_df):
                              y='Count',
                              title='Technical Skills Distribution')
                 fig1.update_layout(xaxis_tickangle=-45)
-                st.plotly_chart(fig1, use_container_width=True, key="skills_bar")
+                st.plotly_chart(fig1, use_container_width=True, key="overview_skills_bar")
             
             # Skills Proportion
             fig2 = px.pie(skills_df,
                          values='Count',
                          names='Skill',
                          title='Skills Proportion')
-            st.plotly_chart(fig2, use_container_width=True, key="skills_pie")
+            st.plotly_chart(fig2, use_container_width=True, key="overview_skills_pie")
             
             # Skills by Experience Level
             fig3 = px.histogram(skills_df,
@@ -998,7 +998,7 @@ def show_analytics_tab(filtered_df):
                                 y='Count',
                                 title='Technical Skills Distribution')
                     fig1.update_layout(xaxis_tickangle=-45)
-                    st.plotly_chart(fig1, use_container_width=True, key="skills_bar")
+                    st.plotly_chart(fig1, use_container_width=True, key="analytics_skills_bar")
                 
                 with col2:
                     # Pie chart
@@ -1006,7 +1006,7 @@ def show_analytics_tab(filtered_df):
                                 values='Count',
                                 names='Skill',
                                 title='Skills Proportion')
-                    st.plotly_chart(fig2, use_container_width=True, key="skills_pie")
+                    st.plotly_chart(fig2, use_container_width=True, key="analytics_skills_pie")
                 
                 # Skills by Experience Level
                 st.write("### Skills by Experience Level")
