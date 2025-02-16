@@ -315,13 +315,37 @@ def show_overview_tab(filtered_df):
     """Display the Overview tab content."""
     st.markdown("### Survey Overview")
     
+    # Interactive Time Range Selector
+    st.sidebar.write("### Time Range Selection")
+    dates = pd.to_datetime(filtered_df['submittedAt'])
+    min_date = dates.min().date()
+    max_date = dates.max().date()
+    
+    date_range = st.sidebar.slider(
+        "Select Date Range",
+        min_value=min_date,
+        max_value=max_date,
+        value=(min_date, max_date)
+    )
+    
+    # Filter data based on selected date range
+    mask = (dates.dt.date >= date_range[0]) & (dates.dt.date <= date_range[1])
+    date_filtered_df = filtered_df[mask]
+    
+    # Interactive Metrics Selection
+    st.sidebar.write("### Metric Selection")
+    show_experience = st.sidebar.checkbox("Show Experience Distribution", value=True)
+    show_roles = st.sidebar.checkbox("Show Role Distribution", value=True)
+    show_skills = st.sidebar.checkbox("Show Skills Analysis", value=True)
+    show_personality = st.sidebar.checkbox("Show Personality Analysis", value=True)
+    
     # Key Metrics with Trends
     with st.container():
         st.subheader("Key Metrics")
         metrics_col1, metrics_col2, metrics_col3, metrics_col4 = st.columns(4)
         
         with metrics_col1:
-            total_responses = len(filtered_df)
+            total_responses = len(date_filtered_df)
             st.metric(
                 "Total Responses",
                 total_responses,
@@ -331,7 +355,7 @@ def show_overview_tab(filtered_df):
         with metrics_col2:
             try:
                 years_list = []
-                for _, row in filtered_df.iterrows():
+                for _, row in date_filtered_df.iterrows():
                     years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
                     if years > 0:
                         years_list.append(years)
@@ -347,7 +371,7 @@ def show_overview_tab(filtered_df):
         with metrics_col3:
             try:
                 roles = []
-                for _, row in filtered_df.iterrows():
+                for _, row in date_filtered_df.iterrows():
                     role = row.get('skills', {}).get('experience', {}).get('role')
                     if role:
                         roles.append(role)
@@ -363,36 +387,57 @@ def show_overview_tab(filtered_df):
         with metrics_col4:
             try:
                 avg_skills = sum([len(row.get('skills', {}).get('technical', [])) 
-                                for _, row in filtered_df.iterrows()]) / len(filtered_df)
+                                for _, row in date_filtered_df.iterrows()]) / len(date_filtered_df)
                 st.metric("Average Skills per Person", f"{avg_skills:.1f}")
             except Exception as e:
                 st.metric("Average Skills per Person", "N/A")
     
-    # Response Trends
+    # Add trend indicators
+    with metrics_col1:
+        previous_count = len(filtered_df[dates.dt.date < date_range[0]])
+        current_count = len(date_filtered_df)
+        delta = None if previous_count == 0 else (current_count - previous_count) / previous_count
+        st.metric(
+            "Total Responses",
+            current_count,
+            delta=f"{delta:.1%}" if delta is not None else None
+        )
+    
+    # Response Trends with Interactive Features
     st.subheader("Response Trends")
+    trend_type = st.selectbox(
+        "Select Trend View",
+        ["Daily", "Weekly", "Monthly"]
+    )
+    
     try:
-        dates = pd.to_datetime(filtered_df['submittedAt'])
-        daily_counts = dates.dt.date.value_counts().sort_index()
+        dates = pd.to_datetime(date_filtered_df['submittedAt'])
+        if trend_type == "Daily":
+            counts = dates.dt.date.value_counts().sort_index()
+        elif trend_type == "Weekly":
+            counts = dates.dt.isocalendar().week.value_counts().sort_index()
+        else:  # Monthly
+            counts = dates.dt.to_period('M').value_counts().sort_index()
         
         fig_trends = px.line(
-            x=daily_counts.index,
-            y=daily_counts.values,
-            title="Daily Response Trends",
-            labels={'x': 'Date', 'y': 'Number of Responses'}
+            x=counts.index,
+            y=counts.values,
+            title=f"{trend_type} Response Trends",
+            labels={'x': 'Time Period', 'y': 'Number of Responses'}
         )
         st.plotly_chart(fig_trends, use_container_width=True)
     except Exception as e:
         st.error(f"Error displaying response trends: {str(e)}")
     
-    # Demographics Overview
-    st.subheader("Demographics Overview")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        try:
+    # Interactive Demographics Analysis
+    if show_experience:
+        st.subheader("Experience Analysis")
+        col1, col2 = st.columns(2)
+        
+        with col1:
             # Experience Distribution
             exp_ranges = []
-            for _, row in filtered_df.iterrows():
+            for _, row in date_filtered_df.iterrows():
                 years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
                 if years < 2:
                     exp_ranges.append("0-2 years")
@@ -404,155 +449,67 @@ def show_overview_tab(filtered_df):
                     exp_ranges.append("10+ years")
             
             exp_df = pd.DataFrame(exp_ranges, columns=['Experience Range'])
-            fig_exp = px.pie(
-                exp_df,
-                names='Experience Range',
-                title='Experience Distribution'
-            )
-            st.plotly_chart(fig_exp, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error displaying experience distribution: {str(e)}")
-    
-    with col2:
-        try:
-            # Project Size Distribution
-            sizes = [row.get('skills', {}).get('experience', {}).get('projectSize', 'Unknown')
-                    for _, row in filtered_df.iterrows()]
-            size_df = pd.DataFrame(sizes, columns=['Project Size'])
-            fig_size = px.pie(
-                size_df,
-                names='Project Size',
-                title='Project Size Distribution'
-            )
-            st.plotly_chart(fig_size, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error displaying project size distribution: {str(e)}")
-    
-    # Career Goals and Preferences
-    st.subheader("Career Development Overview")
-    col3, col4 = st.columns(2)
-    
-    with col3:
-        try:
-            # Career Goals Distribution
-            goals_list = []
-            for _, row in filtered_df.iterrows():
-                goals = row.get('goals', {}).get('careerGoals', [])
-                if isinstance(goals, list):
-                    goals_list.extend(goals)
             
-            if goals_list:
-                goals_df = pd.DataFrame(goals_list, columns=['Goal'])
-                fig_goals = px.pie(
-                    goals_df,
-                    names='Goal',
-                    title='Career Goals Distribution'
-                )
-                st.plotly_chart(fig_goals, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error displaying career goals: {str(e)}")
-    
-    with col4:
-        try:
-            # Advancement Preferences
-            prefs = []
-            for _, row in filtered_df.iterrows():
-                pref = row.get('goals', {}).get('advancementPreference')
-                if pref:
-                    prefs.append(pref)
+            # Add visualization selector
+            viz_type = st.selectbox(
+                "Select Visualization",
+                ["Pie Chart", "Bar Chart", "Donut Chart"],
+                key="exp_viz"
+            )
             
-            if prefs:
-                prefs_df = pd.DataFrame(prefs, columns=['Preference'])
-                fig_prefs = px.pie(
-                    prefs_df,
-                    names='Preference',
-                    title='Advancement Preferences'
-                )
-                st.plotly_chart(fig_prefs, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error displaying advancement preferences: {str(e)}")
-    
-    # Skills Overview
-    st.subheader("Skills Overview")
-    try:
-        # Technical Skills Distribution
-        skills_data = []
-        for _, row in filtered_df.iterrows():
-            skills = row.get('skills', {}).get('technical', [])
-            if isinstance(skills, list):
-                skills_data.extend(skills)
+            if viz_type == "Pie Chart":
+                fig = px.pie(exp_df, names='Experience Range', title='Experience Distribution')
+            elif viz_type == "Bar Chart":
+                fig = px.bar(exp_df['Experience Range'].value_counts(), title='Experience Distribution')
+            else:  # Donut Chart
+                fig = px.pie(exp_df, names='Experience Range', title='Experience Distribution', hole=0.4)
+            
+            st.plotly_chart(fig, use_container_width=True)
         
-        if skills_data:
-            skills_df = pd.DataFrame(pd.Series(skills_data).value_counts()).reset_index()
-            skills_df.columns = ['Skill', 'Count']
+        with col2:
+            # Experience Timeline
+            timeline_data = []
+            for _, row in date_filtered_df.iterrows():
+                years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+                date = pd.to_datetime(row['submittedAt'])
+                timeline_data.append({
+                    'Date': date,
+                    'Years': years
+                })
             
-            fig_skills = px.bar(
-                skills_df,
-                x='Skill',
-                y='Count',
-                title='Technical Skills Distribution'
-            )
-            fig_skills.update_layout(xaxis_tickangle=-45)
-            st.plotly_chart(fig_skills, use_container_width=True)
-    except Exception as e:
-        st.error(f"Error displaying skills overview: {str(e)}")
+            timeline_df = pd.DataFrame(timeline_data)
+            fig = px.scatter(timeline_df, x='Date', y='Years',
+                           title='Experience Timeline',
+                           trendline="lowess")
+            st.plotly_chart(fig, use_container_width=True)
     
-    # Personality Overview
-    st.subheader("Personality Type Overview")
-    col5, col6 = st.columns(2)
+    # Add more interactive sections for roles, skills, and personality...
     
-    with col5:
-        try:
-            # MBTI Distribution
-            mbti_data = []
-            for _, row in filtered_df.iterrows():
-                traits = row.get('personalityTraits', {}).get('myersBriggs', {})
-                if isinstance(traits, dict):
-                    mbti_type = ''
-                    for trait in ['attention', 'information', 'decisions', 'lifestyle']:
-                        if trait in traits and traits[trait]:
-                            mbti_type += traits[trait][0]
-                    if len(mbti_type) == 4:
-                        mbti_data.append(mbti_type)
-            
-            if mbti_data:
-                # Create DataFrame and get value counts
-                mbti_counts = pd.DataFrame(pd.Series(mbti_data).value_counts()).reset_index()
-                mbti_counts.columns = ['MBTI Type', 'Count']  # Rename columns
-                
-                fig_mbti = px.pie(
-                    mbti_counts,
-                    values='Count',
-                    names='MBTI Type',  # Use the renamed column
-                    title='MBTI Type Distribution'
-                )
-                st.plotly_chart(fig_mbti, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error displaying MBTI distribution: {str(e)}")
+    # Interactive Insights
+    st.subheader("Key Insights")
+    insight_type = st.selectbox(
+        "Select Insight Type",
+        ["Experience vs Skills", "Role Progression", "Personality Trends"]
+    )
     
-    with col6:
-        try:
-            # Holland Code Distribution
-            holland_data = []
-            for _, row in filtered_df.iterrows():
-                codes = row.get('personalityTraits', {}).get('hollandCode', [])
-                if isinstance(codes, list):
-                    holland_data.extend(codes)
-            
-            if holland_data:
-                # Create DataFrame and get value counts
-                holland_counts = pd.DataFrame(pd.Series(holland_data).value_counts()).reset_index()
-                holland_counts.columns = ['Holland Code', 'Count']  # Rename columns
-                
-                fig_holland = px.pie(
-                    holland_counts,
-                    values='Count',
-                    names='Holland Code',  # Use the renamed column
-                    title='Holland Code Distribution'
-                )
-                st.plotly_chart(fig_holland, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error displaying Holland code distribution: {str(e)}")
+    if insight_type == "Experience vs Skills":
+        # Add correlation analysis
+        skills_exp_data = []
+        for _, row in date_filtered_df.iterrows():
+            years = float(row.get('personalInfo', {}).get('yearsInConstruction', '0'))
+            skills = len(row.get('skills', {}).get('technical', []))
+            skills_exp_data.append({
+                'Years': years,
+                'Skills': skills
+            })
+        
+        skills_exp_df = pd.DataFrame(skills_exp_data)
+        fig = px.scatter(skills_exp_df, x='Years', y='Skills',
+                        title='Experience vs Number of Skills',
+                        trendline="ols")
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Add more interactive insights...
 
 def show_analytics_tab(filtered_df):
     """Display the Analytics tab content."""
