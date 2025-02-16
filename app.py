@@ -541,21 +541,40 @@ def show_overview_tab(filtered_df):
         with col5:
             # Technical Skills Distribution
             skills_data = []
+            certifications_data = []
             for _, row in date_filtered_df.iterrows():
                 skills = row.get('skills', {}).get('technical', [])
+                certs = row.get('skills', {}).get('certifications', [])
                 if isinstance(skills, list):
                     skills_data.extend(skills)
+                if isinstance(certs, list):
+                    certifications_data.extend(certs)
             
             if skills_data:
                 skills_df = pd.DataFrame(pd.Series(skills_data).value_counts()).reset_index()
                 skills_df.columns = ['Skill', 'Count']
                 
-                fig = px.bar(skills_df,
-                           x='Skill',
-                           y='Count',
-                           title='Technical Skills Distribution')
-                fig.update_layout(xaxis_tickangle=-45)
-                st.plotly_chart(fig, use_container_width=True)
+                fig1 = px.bar(skills_df,
+                             x='Skill',
+                             y='Count',
+                             title='Technical Skills Distribution')
+                fig1.update_layout(xaxis_tickangle=-45)
+                st.plotly_chart(fig1, use_container_width=True, key="skills_bar")
+            
+            # Skills Proportion
+            fig2 = px.pie(skills_df,
+                         values='Count',
+                         names='Skill',
+                         title='Skills Proportion')
+            st.plotly_chart(fig2, use_container_width=True, key="skills_pie")
+            
+            # Skills by Experience Level
+            fig3 = px.histogram(skills_df,
+                               x='Skill',
+                               y='Count',
+                               title='Skills Distribution by Experience Level',
+                               barmode='group')
+            st.plotly_chart(fig3, use_container_width=True, key="skills_exp")
         
         with col6:
             # Certifications Distribution
@@ -566,14 +585,22 @@ def show_overview_tab(filtered_df):
                     cert_data.extend(certs)
             
             if cert_data:
-                cert_df = pd.DataFrame(pd.Series(cert_data).value_counts()).reset_index()
-                cert_df.columns = ['Certification', 'Count']
+                cert_counts = pd.DataFrame(pd.Series(cert_data).value_counts()).reset_index()
+                cert_counts.columns = ['Certification', 'Count']
                 
-                fig = px.pie(cert_df,
-                           values='Count',
-                           names='Certification',
-                           title='Certifications Distribution')
-                st.plotly_chart(fig, use_container_width=True)
+                fig4 = px.bar(cert_counts,
+                             x='Certification',
+                             y='Count',
+                             title='Certifications Distribution')
+                fig4.update_layout(xaxis_tickangle=-45)
+                st.plotly_chart(fig4, use_container_width=True, key="cert_bar")
+            
+            # Average Certifications by Experience Level
+            fig5 = px.bar(cert_counts,
+                         x='Certification',
+                         y='Count',
+                         title='Average Certifications by Experience Level')
+            st.plotly_chart(fig5, use_container_width=True, key="cert_exp")
     
     # Personality Analysis
     if show_personality:
@@ -971,7 +998,7 @@ def show_analytics_tab(filtered_df):
                                 y='Count',
                                 title='Technical Skills Distribution')
                     fig1.update_layout(xaxis_tickangle=-45)
-                    st.plotly_chart(fig1, use_container_width=True)
+                    st.plotly_chart(fig1, use_container_width=True, key="skills_bar")
                 
                 with col2:
                     # Pie chart
@@ -979,7 +1006,7 @@ def show_analytics_tab(filtered_df):
                                 values='Count',
                                 names='Skill',
                                 title='Skills Proportion')
-                    st.plotly_chart(fig2, use_container_width=True)
+                    st.plotly_chart(fig2, use_container_width=True, key="skills_pie")
                 
                 # Skills by Experience Level
                 st.write("### Skills by Experience Level")
@@ -1005,7 +1032,7 @@ def show_analytics_tab(filtered_df):
                                       color='Skill',
                                       title='Skills Distribution by Experience Level',
                                       barmode='group')
-                    st.plotly_chart(fig3, use_container_width=True)
+                    st.plotly_chart(fig3, use_container_width=True, key="skills_exp")
                 
                 # Certifications Analysis
                 if certifications_data:
@@ -1022,7 +1049,7 @@ def show_analytics_tab(filtered_df):
                                     y='Count',
                                     title='Certifications Distribution')
                         fig4.update_layout(xaxis_tickangle=-45)
-                        st.plotly_chart(fig4, use_container_width=True)
+                        st.plotly_chart(fig4, use_container_width=True, key="cert_bar")
                     
                     with col4:
                         # Average number of certifications by experience
@@ -1047,7 +1074,7 @@ def show_analytics_tab(filtered_df):
                                     x='Experience Level',
                                     y='Number of Certifications',
                                     title='Average Certifications by Experience Level')
-                        st.plotly_chart(fig5, use_container_width=True)
+                        st.plotly_chart(fig5, use_container_width=True, key="cert_exp")
                 
                 # Skills Co-occurrence Analysis
                 st.write("### Skills Relationships")
@@ -1068,7 +1095,7 @@ def show_analytics_tab(filtered_df):
                                y=all_skills,
                                title="Skills Co-occurrence Matrix",
                                color_continuous_scale="Viridis")
-                st.plotly_chart(fig6, use_container_width=True)
+                st.plotly_chart(fig6, use_container_width=True, key="skills_matrix")
                 
                 # Summary Statistics
                 st.write("### Skills Summary")
