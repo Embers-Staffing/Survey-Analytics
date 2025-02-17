@@ -346,11 +346,12 @@ def show_overview_tab(filtered_df):
         
         with metrics_col1:
             total_responses = len(date_filtered_df)
-            st.metric(
-                "Total Responses",
-                total_responses,
-                delta=None
-            )
+            # Remove this first metric since we show it again below
+            # st.metric(
+            #     "Total Responses",
+            #     total_responses,
+            #     delta=None
+            # )
         
         with metrics_col2:
             try:
@@ -392,7 +393,7 @@ def show_overview_tab(filtered_df):
             except Exception as e:
                 st.metric("Average Skills per Person", "N/A")
     
-    # Add trend indicators
+    # Keep only this instance of Total Responses with the trend indicator
     with metrics_col1:
         previous_count = len(filtered_df[dates.dt.date < date_range[0]])
         current_count = len(date_filtered_df)
